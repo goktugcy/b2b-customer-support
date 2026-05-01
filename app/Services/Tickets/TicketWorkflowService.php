@@ -6,13 +6,17 @@ use App\Enums\TicketStatus;
 use App\Models\ApiClient;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\Sla\SlaService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class TicketWorkflowService
 {
-    public function __construct(private readonly TicketEventRecorder $events) {}
+    public function __construct(
+        private readonly TicketEventRecorder $events,
+        private readonly SlaService $sla,
+    ) {}
 
     /**
      * @return array<string, list<TicketStatus>>
@@ -144,6 +148,8 @@ class TicketWorkflowService
             newValues: ['status' => $to->value],
             request: $request,
         );
+
+        $this->sla->syncResolution($ticket->refresh());
 
         return $ticket->refresh();
     }

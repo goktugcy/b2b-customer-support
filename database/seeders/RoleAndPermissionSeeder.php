@@ -61,6 +61,7 @@ class RoleAndPermissionSeeder extends Seeder
         ]);
 
         Role::findOrCreate(RoleName::CustomerAdmin->value, self::GUARD)->syncPermissions([
+            'users.manage',
             'users.invite',
             'tickets.view_company',
             'tickets.create',

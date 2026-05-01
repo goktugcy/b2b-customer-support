@@ -10,6 +10,7 @@ use App\Models\TicketComment;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Content\HtmlSanitizer;
+use App\Services\Sla\SlaService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -23,6 +24,7 @@ class TicketCommentService
         private readonly TicketWorkflowService $workflow,
         private readonly TicketAttachmentService $attachments,
         private readonly HtmlSanitizer $sanitizer,
+        private readonly SlaService $sla,
     ) {}
 
     /**
@@ -63,6 +65,10 @@ class TicketCommentService
 
             if ($isCustomerSide && $visibility === TicketVisibility::Public) {
                 $this->workflow->handleCustomerReply($ticket->refresh(), $actor, $request);
+            }
+
+            if ($actor instanceof User && $visibility === TicketVisibility::Public) {
+                $this->sla->markFirstResponse($ticket->refresh(), $actor);
             }
 
             $eventType = $visibility === TicketVisibility::Internal ? 'ticket.internal_note.created' : 'ticket.comment.created';

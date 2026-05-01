@@ -30,6 +30,15 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $attachmentMaxKilobytes = (int) config('support.attachments.max_kilobytes', 20480);
+        $attachmentExtensions = array_values(array_map(
+            fn (string $extension): string => strtolower(trim($extension)),
+            config('support.attachments.allowed_extensions', [])
+        ));
+        $attachmentMimes = array_values(array_map(
+            fn (string $mime): string => trim($mime),
+            config('support.attachments.allowed_mimes', [])
+        ));
 
         return [
             ...parent::share($request),
@@ -53,6 +62,19 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'invitation_url' => fn () => $request->session()->get('invitation_url'),
                 'plain_text_token' => fn () => $request->session()->get('plain_text_token'),
+                'webhook_secret' => fn () => $request->session()->get('webhook_secret'),
+            ],
+            'support' => [
+                'attachments' => [
+                    'max_kilobytes' => $attachmentMaxKilobytes,
+                    'max_bytes' => $attachmentMaxKilobytes * 1024,
+                    'allowed_extensions' => $attachmentExtensions,
+                    'allowed_mimes' => $attachmentMimes,
+                    'accept' => collect($attachmentExtensions)
+                        ->map(fn (string $extension): string => '.'.$extension)
+                        ->merge($attachmentMimes)
+                        ->implode(','),
+                ],
             ],
         ];
     }

@@ -27,6 +27,7 @@ use App\Services\Tickets\TicketCreationService;
 use App\Services\Tickets\TicketTargetService;
 use App\Services\Tickets\TicketWatcherService;
 use App\Services\Tickets\TicketWorkflowService;
+use App\Support\AttachmentValidationRules;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -41,6 +42,16 @@ class TicketController extends Controller
         $tickets = Ticket::query()
             ->visibleTo($request->user())
             ->with(['company', 'assignee', 'supportProject', 'tracker', 'category', 'tags'])
+            ->when($request->string('search')->isNotEmpty(), function ($query) use ($request): void {
+                $search = '%'.$request->string('search')->toString().'%';
+                $query->where(function ($inner) use ($search): void {
+                    $inner->where('subject', 'like', $search)
+                        ->orWhere('description', 'like', $search)
+                        ->orWhereHas('company', fn ($company) => $company->where('name', 'like', $search))
+                        ->orWhereHas('tags', fn ($tag) => $tag->where('name', 'like', $search));
+                });
+            })
+            ->when($request->string('queue')->isNotEmpty(), fn ($query) => $this->applyQueueFilter($query, $request->string('queue')->toString(), $request))
             ->when($request->string('status')->isNotEmpty(), fn ($query) => $query->where('status', $request->string('status')))
             ->when($request->string('priority')->isNotEmpty(), fn ($query) => $query->where('priority', $request->string('priority')))
             ->when($request->string('company')->isNotEmpty(), fn ($query) => $query->whereHas('company', fn ($company) => $company->where('public_id', $request->string('company'))))
@@ -55,7 +66,7 @@ class TicketController extends Controller
 
         return Inertia::render('Admin/Tickets/Index', [
             'tickets' => $tickets,
-            'filters' => $request->only(['status', 'priority', 'company', 'project', 'tracker', 'category', 'tag']),
+            'filters' => $request->only(['search', 'queue', 'status', 'priority', 'company', 'project', 'tracker', 'category', 'tag']),
             'companies' => Company::clients()->orderBy('name')->get(['public_id', 'name']),
             'projects' => $issueTracking->projectOptions(),
             'trackers' => $issueTracking->trackerOptions(),
@@ -264,7 +275,7 @@ class TicketController extends Controller
         $this->authorize('attach', $ticket);
 
         $validated = $request->validate([
-            'file' => ['required', 'file', 'max:20480'],
+            'file' => AttachmentValidationRules::upload(),
             'visibility' => ['required', 'in:public,internal'],
         ]);
 
@@ -295,7 +306,28 @@ class TicketController extends Controller
             'assignee' => $ticket->assignee?->name,
             'assignee_id' => $ticket->assignee?->public_id,
             'created_at' => $ticket->created_at?->toISOString(),
+            'sla' => $ticket->sla_first_response_breached_at || $ticket->sla_resolution_breached_at ? 'breached' : null,
         ];
+    }
+
+    private function applyQueueFilter($query, string $queue, Request $request): void
+    {
+        match ($queue) {
+            'mine' => $query->where('assigned_to_user_id', $request->user()->id),
+            'unassigned' => $query->whereNull('assigned_to_user_id'),
+            'overdue' => $query->where(fn ($inner) => $inner
+                ->whereNotNull('sla_first_response_breached_at')
+                ->orWhereNotNull('sla_resolution_breached_at')),
+            'due_soon' => $query
+                ->whereNull('sla_first_response_breached_at')
+                ->whereNull('sla_resolution_breached_at')
+                ->where(fn ($inner) => $inner
+                    ->where(fn ($first) => $first
+                        ->whereNull('first_responded_at')
+                        ->whereBetween('first_response_due_at', [now(), now()->addHours(4)]))
+                    ->orWhereBetween('due_at', [now(), now()->addHours(4)])),
+            default => null,
+        };
     }
 
     private function ticketDetail(Ticket $ticket): array
@@ -365,6 +397,7 @@ class TicketController extends Controller
         return [
             'id' => $attachment->public_id,
             'filename' => $attachment->original_name,
+            'mime_type' => $attachment->mime_type,
             'size' => $attachment->size,
             'visibility' => $attachment->visibility->value,
             'url' => route('attachments.download', $attachment),

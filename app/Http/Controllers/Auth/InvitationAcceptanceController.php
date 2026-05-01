@@ -38,7 +38,7 @@ class InvitationAcceptanceController extends Controller
         $user = $invitations->accept($token, $validated, $request);
 
         return redirect()->intended($user->isProviderUser()
-            ? route('admin.tickets.index', absolute: false)
-            : route('portal.tickets.index', absolute: false));
+            ? route('admin.home', absolute: false)
+            : route('portal.home', absolute: false));
     }
 }

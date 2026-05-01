@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\AttachmentScanStatus;
 use App\Enums\TicketVisibility;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasPublicId;
@@ -28,7 +27,6 @@ class TicketAttachment extends Model
         'size',
         'checksum',
         'visibility',
-        'scan_status',
         'metadata',
     ];
 
@@ -36,7 +34,6 @@ class TicketAttachment extends Model
     {
         return [
             'visibility' => TicketVisibility::class,
-            'scan_status' => AttachmentScanStatus::class,
             'metadata' => 'array',
         ];
     }

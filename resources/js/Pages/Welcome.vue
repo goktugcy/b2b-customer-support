@@ -14,10 +14,29 @@ defineProps<{
 <template>
   <Head title="Support Desk" />
   <main class="min-h-screen bg-background text-foreground">
-    <section class="relative min-h-[88vh] overflow-hidden border-b">
-      <div class="absolute inset-x-0 bottom-0 top-24 mx-auto max-w-6xl px-6">
-        <div class="grid h-full gap-4 opacity-90 lg:grid-cols-[1fr_360px]">
-          <div class="rounded-t-lg border bg-card p-4 shadow-panel">
+    <section class="border-b">
+      <div class="mx-auto flex min-h-[82vh] max-w-6xl flex-col px-6 py-8">
+        <header class="flex items-center justify-between">
+          <Link href="/" class="flex items-center gap-3 font-semibold">
+            <span class="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground shadow-sm">CS</span>
+            <span>Support Desk</span>
+          </Link>
+          <Link v-if="canLogin" :href="route('login')">
+            <Button variant="secondary">Sign in</Button>
+          </Link>
+        </header>
+
+        <div class="grid flex-1 content-center gap-8 py-10">
+          <div class="max-w-3xl">
+            <div class="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-base font-bold text-primary-foreground shadow-sm">CS</div>
+            <h1 class="mt-6 text-5xl font-semibold tracking-normal text-foreground sm:text-6xl">Support Desk</h1>
+            <p class="mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
+              Customer support operations for B2B teams: tickets, tenant-aware users, API-created issues, attachments, and webhook delivery in one workspace.
+            </p>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div class="rounded-lg border bg-card p-4 shadow-panel">
             <div class="flex items-center justify-between border-b pb-3">
               <div class="flex items-center gap-3">
                 <span class="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">CS</span>
@@ -56,7 +75,7 @@ defineProps<{
               </div>
             </div>
           </div>
-          <div class="hidden rounded-t-lg border bg-card p-4 shadow-panel lg:block">
+            <div class="hidden rounded-lg border bg-card p-4 shadow-panel lg:block">
             <p class="text-sm font-semibold">Client portal</p>
             <div class="mt-4 space-y-3">
               <div class="rounded-md border bg-background p-3 text-sm">
@@ -75,19 +94,6 @@ defineProps<{
           </div>
         </div>
       </div>
-      <div class="relative z-10 mx-auto flex min-h-[72vh] max-w-6xl items-center px-6 py-16">
-        <div class="max-w-2xl">
-          <div class="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-base font-bold text-primary-foreground shadow-sm">CS</div>
-          <h1 class="mt-6 text-5xl font-semibold tracking-normal text-foreground sm:text-6xl">Support Desk</h1>
-          <p class="mt-4 max-w-xl text-lg leading-8 text-muted-foreground">
-            Customer support operations for B2B teams: tickets, tenant-aware users, API-created issues, attachments, and webhook delivery in one workspace.
-          </p>
-          <div class="mt-7 flex gap-3">
-            <Link v-if="canLogin" :href="route('login')">
-              <Button size="lg">Sign in</Button>
-            </Link>
-          </div>
-        </div>
       </div>
     </section>
 

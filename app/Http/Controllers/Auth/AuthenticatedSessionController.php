@@ -36,8 +36,8 @@ class AuthenticatedSessionController extends Controller
         $request->user()->forceFill(['last_login_at' => now()])->save();
 
         return redirect()->intended($request->user()->isProviderUser()
-            ? route('admin.tickets.index', absolute: false)
-            : route('portal.tickets.index', absolute: false));
+            ? route('admin.home', absolute: false)
+            : route('portal.home', absolute: false));
     }
 
     /**

@@ -66,7 +66,6 @@ return new class extends Migration
             $table->unsignedBigInteger('size');
             $table->string('checksum', 128)->nullable();
             $table->string('visibility', 32)->default('public')->index();
-            $table->string('scan_status', 32)->default('pending')->index();
             $table->jsonb('metadata')->default('{}');
             $table->timestamps();
 

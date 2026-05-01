@@ -21,6 +21,7 @@ use App\Services\Tickets\TicketCommentService;
 use App\Services\Tickets\TicketCreationService;
 use App\Services\Tickets\TicketWatcherService;
 use App\Services\Tickets\TicketWorkflowService;
+use App\Support\AttachmentValidationRules;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,6 +37,15 @@ class TicketController extends Controller
             'tickets' => Ticket::query()
                 ->visibleTo($request->user())
                 ->with(['assignee', 'supportProject', 'tracker', 'category', 'tags'])
+                ->when($request->string('search')->isNotEmpty(), function ($query) use ($request): void {
+                    $search = '%'.$request->string('search')->toString().'%';
+                    $query->where(function ($inner) use ($search): void {
+                        $inner->where('subject', 'like', $search)
+                            ->orWhere('description', 'like', $search)
+                            ->orWhereHas('tags', fn ($tag) => $tag->where('name', 'like', $search));
+                    });
+                })
+                ->when($request->string('queue')->isNotEmpty(), fn ($query) => $this->applyQueueFilter($query, $request->string('queue')->toString(), $request))
                 ->when($request->string('status')->isNotEmpty(), fn ($query) => $query->where('status', $request->string('status')))
                 ->when($request->string('project')->isNotEmpty(), fn ($query) => $query->whereHas('supportProject', fn ($project) => $project->where('public_id', $request->string('project'))))
                 ->when($request->string('tracker')->isNotEmpty(), fn ($query) => $query->whereHas('tracker', fn ($tracker) => $tracker->where('public_id', $request->string('tracker'))))
@@ -53,8 +63,9 @@ class TicketController extends Controller
                     'tags' => $ticket->tags->pluck('name')->values(),
                     'assignee' => $ticket->assignee?->name,
                     'created_at' => $ticket->created_at?->toISOString(),
+                    'sla' => $ticket->sla_first_response_breached_at || $ticket->sla_resolution_breached_at ? 'breached' : null,
                 ]),
-            'filters' => $request->only(['status', 'project', 'tracker', 'tag']),
+            'filters' => $request->only(['search', 'queue', 'status', 'project', 'tracker', 'tag']),
             'statuses' => array_map(fn (TicketStatus $status): array => ['value' => $status->value, 'label' => $status->label()], TicketStatus::cases()),
             'projects' => $issueTracking->projectOptions($request->user()->company),
             'trackers' => $issueTracking->trackerOptions(),
@@ -231,7 +242,7 @@ class TicketController extends Controller
     {
         $this->authorize('attach', $ticket);
 
-        $request->validate(['file' => ['required', 'file', 'max:20480']]);
+        $request->validate(['file' => AttachmentValidationRules::upload()]);
 
         $attachments->store($ticket, $request->file('file'), $request->user(), TicketVisibility::Public, $request);
 
@@ -243,9 +254,32 @@ class TicketController extends Controller
         return [
             'id' => $attachment->public_id,
             'filename' => $attachment->original_name,
+            'mime_type' => $attachment->mime_type,
             'size' => $attachment->size,
             'url' => route('attachments.download', $attachment),
         ];
+    }
+
+    private function applyQueueFilter($query, string $queue, Request $request): void
+    {
+        match ($queue) {
+            'mine' => $query->where(fn ($inner) => $inner
+                ->where('created_by_user_id', $request->user()->id)
+                ->orWhere('requester_user_id', $request->user()->id)),
+            'unassigned' => $query->whereNull('assigned_to_user_id'),
+            'overdue' => $query->where(fn ($inner) => $inner
+                ->whereNotNull('sla_first_response_breached_at')
+                ->orWhereNotNull('sla_resolution_breached_at')),
+            'due_soon' => $query
+                ->whereNull('sla_first_response_breached_at')
+                ->whereNull('sla_resolution_breached_at')
+                ->where(fn ($inner) => $inner
+                    ->where(fn ($first) => $first
+                        ->whereNull('first_responded_at')
+                        ->whereBetween('first_response_due_at', [now(), now()->addHours(4)]))
+                    ->orWhereBetween('due_at', [now(), now()->addHours(4)])),
+            default => null,
+        };
     }
 
     private function providerDepartments(): array

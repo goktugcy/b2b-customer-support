@@ -33,6 +33,7 @@ class InvitationController extends Controller
                     'email' => $invitation->email,
                     'role_name' => $invitation->role_name,
                     'accepted_at' => $invitation->accepted_at?->toISOString(),
+                    'revoked_at' => $invitation->revoked_at?->toISOString(),
                     'expires_at' => $invitation->expires_at?->toISOString(),
                 ]),
             'companies' => Company::orderBy('name')->get(['public_id', 'name', 'type']),
@@ -62,6 +63,26 @@ class InvitationController extends Controller
 
         return back()
             ->with('success', 'Invitation sent.')
+            ->with('invitation_url', route('invitations.accept', ['token' => $result['token']]));
+    }
+
+    public function revoke(Request $request, Invitation $invitation, InvitationService $invitations): RedirectResponse
+    {
+        $this->authorize('revoke', $invitation);
+
+        $invitations->revoke($invitation, $request->user(), $request);
+
+        return back()->with('success', 'Invitation revoked.');
+    }
+
+    public function resend(Request $request, Invitation $invitation, InvitationService $invitations): RedirectResponse
+    {
+        $this->authorize('create', [Invitation::class, $invitation->company]);
+
+        $result = $invitations->resend($invitation, $request->user(), $request);
+
+        return back()
+            ->with('success', 'Invitation resent.')
             ->with('invitation_url', route('invitations.accept', ['token' => $result['token']]));
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Services\Tickets;
 
 use App\Enums\TicketVisibility;
-use App\Jobs\ProcessAttachment;
 use App\Models\ApiClient;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
@@ -14,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class TicketAttachmentService
 {
@@ -30,6 +30,8 @@ class TicketAttachmentService
         ?Request $request = null,
         ?TicketComment $comment = null,
     ): TicketAttachment {
+        $this->validateFile($file);
+
         return DB::transaction(function () use ($ticket, $file, $actor, $visibility, $request, $comment): TicketAttachment {
             $directory = 'tickets/'.$ticket->company->public_id.'/'.$ticket->public_id;
             $path = $file->store($directory, 'local');
@@ -70,9 +72,34 @@ class TicketAttachmentService
                 'filename' => $attachment->original_name,
             ], request: $request);
 
-            ProcessAttachment::dispatch($attachment)->afterCommit()->onQueue('attachments');
-
             return $attachment;
         });
+    }
+
+    private function validateFile(UploadedFile $file): void
+    {
+        $maxKilobytes = (int) config('support.attachments.max_kilobytes', 20480);
+        $allowedMimes = config('support.attachments.allowed_mimes', []);
+        $allowedExtensions = array_map('strtolower', config('support.attachments.allowed_extensions', []));
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mime = $file->getMimeType() ?: $file->getClientMimeType();
+
+        $errors = [];
+
+        if (($file->getSize() ?: 0) > $maxKilobytes * 1024) {
+            $errors[] = 'The file is too large.';
+        }
+
+        if ($allowedExtensions && ! in_array($extension, $allowedExtensions, true)) {
+            $errors[] = 'This file extension is not allowed.';
+        }
+
+        if ($allowedMimes && ! in_array($mime, $allowedMimes, true)) {
+            $errors[] = 'This file type is not allowed.';
+        }
+
+        if ($errors) {
+            throw ValidationException::withMessages(['file' => implode(' ', $errors)]);
+        }
     }
 }

@@ -10,9 +10,9 @@ defineProps<{ title?: string }>()
 </script>
 
 <template>
-  <div class="min-h-screen bg-background px-4 py-10 text-foreground">
-    <div class="mx-auto grid min-h-[calc(100vh-5rem)] max-w-5xl items-center gap-8 lg:grid-cols-[1fr_440px]">
-      <section class="hidden lg:block">
+  <div class="min-h-screen overflow-hidden bg-background text-foreground">
+    <div class="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:px-8">
+      <section class="hidden max-w-xl lg:block">
         <Link href="/" class="inline-flex items-center gap-3">
           <span class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground shadow-sm">CS</span>
           <span>
@@ -26,7 +26,7 @@ defineProps<{ title?: string }>()
         </div>
       </section>
 
-      <Card>
+      <Card class="w-full">
         <CardHeader>
           <Link href="/" class="mb-2 inline-flex items-center gap-3 lg:hidden">
             <span class="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">CS</span>
@@ -36,7 +36,7 @@ defineProps<{ title?: string }>()
           <CardDescription>Use your workspace credentials to continue.</CardDescription>
         </CardHeader>
         <CardContent>
-        <slot />
+          <slot />
         </CardContent>
       </Card>
     </div>

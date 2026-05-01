@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Support\AttachmentValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTicketAttachmentRequest extends FormRequest
@@ -14,7 +15,7 @@ class StoreTicketAttachmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:20480'],
+            'file' => AttachmentValidationRules::upload(),
         ];
     }
 }

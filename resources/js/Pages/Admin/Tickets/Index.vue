@@ -5,6 +5,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Select from '@/Components/ui/select/Select.vue'
+import Input from '@/Components/ui/input/Input.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
 import Table from '@/Components/ui/table/Table.vue'
@@ -28,11 +29,12 @@ type TicketRow = {
   tags: TagOption[]
   assignee?: string
   created_at: string
+  sla?: string | null
 }
 
 const props = defineProps<{
   tickets: Paginated<TicketRow>
-  filters: { status?: string; priority?: string; company?: string; project?: string; tracker?: string; category?: string; tag?: string }
+  filters: { search?: string; queue?: string; status?: string; priority?: string; company?: string; project?: string; tracker?: string; category?: string; tag?: string }
   companies: { public_id: string; name: string }[]
   projects: ProjectOption[]
   trackers: TrackerOption[]
@@ -43,6 +45,8 @@ const props = defineProps<{
 }>()
 
 const filter = useForm({
+  search: props.filters.search ?? '',
+  queue: props.filters.queue ?? '',
   status: props.filters.status ?? '',
   priority: props.filters.priority ?? '',
   company: props.filters.company ?? '',
@@ -72,7 +76,15 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
 
     <Card class="mt-4">
       <CardContent class="p-4">
-        <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
+        <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-9">
+          <Input v-model="filter.search" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+          <Select v-model="filter.queue" @change="applyFilters">
+            <option value="">All queues</option>
+            <option value="mine">Mine</option>
+            <option value="unassigned">Unassigned</option>
+            <option value="overdue">Overdue</option>
+            <option value="due_soon">Due soon</option>
+          </Select>
           <Select v-model="filter.status" @change="applyFilters">
             <option value="">All statuses</option>
             <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
@@ -125,6 +137,7 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
                 </Link>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
+                  <Badge v-if="ticket.sla === 'breached'" tone="red">SLA breached</Badge>
                   <Badge v-for="tag in ticket.tags" :key="tag.name" tone="neutral">{{ tag.name }}</Badge>
                 </div>
                 <p class="mt-1 text-xs text-muted-foreground">{{ ticket.assignee || 'Unassigned' }}</p>

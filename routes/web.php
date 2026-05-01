@@ -19,8 +19,8 @@ Route::get('/dashboard', function () {
     $user = request()->user();
 
     return redirect($user?->isProviderUser()
-        ? route('admin.tickets.index', absolute: false)
-        : route('portal.tickets.index', absolute: false));
+        ? route('admin.home', absolute: false)
+        : route('portal.home', absolute: false));
 })->middleware(['auth', 'verified', 'active.user'])->name('dashboard');
 
 Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {

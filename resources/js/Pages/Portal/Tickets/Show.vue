@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { ArrowLeft, X } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
@@ -51,6 +51,8 @@ const watcherForm = useForm({ user_id: '' })
 const attachmentForm = useForm({ attachments: [] as File[] })
 
 const watcherOptions = computed(() => props.watcherUsers.filter((user) => !props.ticket.watchers.some((watcher) => watcher.id === user.id)))
+const commentAttachmentErrors = computed(() => form.errors.attachments || Object.entries(form.errors).find(([key]) => key.startsWith('attachments.'))?.[1])
+const attachmentUploadError = ref('')
 
 const submit = () => form.post(route('portal.tickets.comments.store', props.ticket.id), {
   preserveScroll: true,
@@ -73,12 +75,17 @@ const removeWatcher = (userId: string) => {
 }
 
 const uploadAttachments = () => {
+  attachmentUploadError.value = ''
+
   attachmentForm.attachments.forEach((file) => {
     router.post(route('portal.tickets.attachments.store', props.ticket.id), { file }, {
       preserveScroll: true,
       forceFormData: true,
       onSuccess: () => {
         attachmentForm.attachments = []
+      },
+      onError: (errors) => {
+        attachmentUploadError.value = errors.file ?? Object.values(errors)[0] ?? 'Upload failed.'
       },
     })
   })
@@ -125,7 +132,7 @@ const uploadAttachments = () => {
               <Label>Reply</Label>
               <RichTextEditor v-model="form.body" placeholder="Write a reply" />
               <FieldError :message="form.errors.body" />
-              <FilePicker v-model="form.attachments" />
+              <FilePicker v-model="form.attachments" :error="commentAttachmentErrors" />
               <Button type="submit" :disabled="form.processing">Add reply</Button>
             </form>
           </CardContent>
@@ -199,7 +206,7 @@ const uploadAttachments = () => {
           <CardHeader><CardTitle class="text-sm">Attachments</CardTitle></CardHeader>
           <CardContent>
             <form class="space-y-3" @submit.prevent="uploadAttachments">
-              <FilePicker v-model="attachmentForm.attachments" />
+              <FilePicker v-model="attachmentForm.attachments" :error="attachmentUploadError" />
               <Button type="submit" class="w-full" variant="secondary" :disabled="!attachmentForm.attachments.length">Upload</Button>
             </form>
           </CardContent>

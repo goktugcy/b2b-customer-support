@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\TicketVisibility;
+use App\Support\AttachmentValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class StoreTicketCommentRequest extends FormRequest
             'body' => ['required', 'string', 'max:20000'],
             'visibility' => ['required', Rule::in([TicketVisibility::Public->value, TicketVisibility::Internal->value])],
             'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'max:20480'],
+            'attachments.*' => AttachmentValidationRules::upload(required: false),
         ];
     }
 }

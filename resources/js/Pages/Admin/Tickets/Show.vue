@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ArrowLeft, X } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
@@ -89,6 +89,8 @@ const watcherOptions = computed(() => props.providerUsers.filter((user) => !prop
 const targetErrors = computed(() => targetForm.errors.target_department_ids || targetForm.errors.target_user_ids || (targetForm.errors as Record<string, string | undefined>).targets)
 const filteredCategories = computed(() => props.categories.filter((category) => category.project_id === editForm.project_id && category.status !== 'disabled'))
 const selectedCustomFields = computed(() => props.customFields.filter((field) => field.tracker_id === editForm.tracker_id && field.status !== 'disabled'))
+const commentAttachmentErrors = computed(() => commentForm.errors.attachments || Object.entries(commentForm.errors).find(([key]) => key.startsWith('attachments.'))?.[1])
+const attachmentUploadError = ref('')
 
 watch(() => editForm.project_id, () => {
   if (!filteredCategories.value.some((category) => category.id === editForm.category_id)) {
@@ -120,6 +122,8 @@ const removeWatcher = (userId: string) => {
 }
 
 const uploadAttachments = () => {
+  attachmentUploadError.value = ''
+
   attachmentForm.attachments.forEach((file) => {
     router.post(route('admin.tickets.attachments.store', props.ticket.id), {
       file,
@@ -129,6 +133,9 @@ const uploadAttachments = () => {
       forceFormData: true,
       onSuccess: () => {
         attachmentForm.attachments = []
+      },
+      onError: (errors) => {
+        attachmentUploadError.value = errors.file ?? Object.values(errors)[0] ?? 'Upload failed.'
       },
     })
   })
@@ -195,7 +202,7 @@ const uploadAttachments = () => {
                   <option value="public">Public reply</option>
                   <option value="internal">Internal note</option>
                 </Select>
-                <FilePicker v-model="commentForm.attachments" />
+                <FilePicker v-model="commentForm.attachments" :error="commentAttachmentErrors" />
               </div>
               <div class="flex justify-end">
                 <Button type="submit" :disabled="commentForm.processing">Add comment</Button>
@@ -345,7 +352,7 @@ const uploadAttachments = () => {
                 <option value="public">Public</option>
                 <option value="internal">Internal</option>
               </Select>
-              <FilePicker v-model="attachmentForm.attachments" />
+              <FilePicker v-model="attachmentForm.attachments" :error="attachmentUploadError" />
               <Button type="submit" class="w-full" variant="secondary" :disabled="!attachmentForm.attachments.length">Upload</Button>
             </form>
           </CardContent>

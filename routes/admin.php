@@ -2,19 +2,19 @@
 
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\IssueTrackingController;
 use App\Http\Controllers\Admin\SupportDepartmentController;
 use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function (): void {
-        Route::get('/', fn () => redirect()->route('admin.tickets.index'))->name('dashboard');
+        Route::get('/', fn () => redirect()->route('admin.home'))->name('dashboard');
 
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show', 'update']);
         Route::patch('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
@@ -40,10 +40,14 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
         Route::patch('issue-tracking/custom-fields/{customField}', [IssueTrackingController::class, 'updateCustomField'])->name('issue-tracking.custom-fields.update');
         Route::delete('issue-tracking/custom-fields/{customField}', [IssueTrackingController::class, 'destroyCustomField'])->name('issue-tracking.custom-fields.destroy');
         Route::resource('companies', CompanyController::class)->only(['index', 'store', 'show']);
+        Route::patch('companies/{company}/sla-policies/{policy}', [CompanyController::class, 'updateSlaPolicy'])->name('companies.sla-policies.update');
         Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::get('invitations', [InvitationController::class, 'index'])->name('invitations.index');
         Route::post('invitations', [InvitationController::class, 'store'])->name('invitations.store');
+        Route::patch('invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('invitations.resend');
+        Route::delete('invitations/{invitation}', [InvitationController::class, 'revoke'])->name('invitations.revoke');
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
-        Route::get('dashboard', fn () => Inertia::render('Admin/Dashboard'))->name('home');
+        Route::get('dashboard', DashboardController::class)->name('home');
     });

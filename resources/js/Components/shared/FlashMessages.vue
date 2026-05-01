@@ -9,7 +9,7 @@ const page = usePage<PageProps>()
 </script>
 
 <template>
-  <div v-if="page.props.flash.success || page.props.flash.error || page.props.flash.invitation_url || page.props.flash.plain_text_token" class="space-y-2">
+  <div v-if="page.props.flash.success || page.props.flash.error || page.props.flash.invitation_url || page.props.flash.plain_text_token || page.props.flash.webhook_secret" class="space-y-2">
     <Alert v-if="page.props.flash.success" variant="success">
       <AlertDescription>{{ page.props.flash.success }}</AlertDescription>
     </Alert>
@@ -23,6 +23,10 @@ const page = usePage<PageProps>()
     <Alert v-if="page.props.flash.plain_text_token" variant="warning">
       <AlertTitle>API token</AlertTitle>
       <AlertDescription class="break-all font-mono text-xs">{{ page.props.flash.plain_text_token }}</AlertDescription>
+    </Alert>
+    <Alert v-if="page.props.flash.webhook_secret" variant="warning">
+      <AlertTitle>Webhook secret</AlertTitle>
+      <AlertDescription class="break-all font-mono text-xs">{{ page.props.flash.webhook_secret }}</AlertDescription>
     </Alert>
   </div>
 </template>

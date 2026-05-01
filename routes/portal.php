@@ -1,18 +1,18 @@
 <?php
 
 use App\Http\Controllers\Portal\ApiTokenController;
+use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\TicketController;
 use App\Http\Controllers\Portal\UserController;
 use App\Http\Controllers\Portal\WebhookEndpointController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
     ->prefix('portal')
     ->name('portal.')
     ->group(function (): void {
-        Route::get('/', fn () => redirect()->route('portal.tickets.index'))->name('dashboard');
-        Route::get('dashboard', fn () => Inertia::render('Portal/Dashboard'))->name('home');
+        Route::get('/', fn () => redirect()->route('portal.home'))->name('dashboard');
+        Route::get('dashboard', DashboardController::class)->name('home');
 
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
         Route::patch('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
@@ -22,7 +22,10 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
         Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment'])->name('tickets.comments.store');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::post('users/invitations', [UserController::class, 'invite'])->name('users.invitations.store');
+        Route::patch('users/invitations/{invitation}/resend', [UserController::class, 'resendInvitation'])->name('users.invitations.resend');
+        Route::delete('users/invitations/{invitation}', [UserController::class, 'revokeInvitation'])->name('users.invitations.revoke');
 
         Route::get('api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');
         Route::post('api-tokens', [ApiTokenController::class, 'store'])->name('api-tokens.store');
@@ -30,5 +33,8 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
 
         Route::get('webhooks', [WebhookEndpointController::class, 'index'])->name('webhooks.index');
         Route::post('webhooks', [WebhookEndpointController::class, 'store'])->name('webhooks.store');
+        Route::post('webhooks/{webhookEndpoint}/test', [WebhookEndpointController::class, 'test'])->name('webhooks.test');
+        Route::patch('webhooks/{webhookEndpoint}/secret', [WebhookEndpointController::class, 'rotateSecret'])->name('webhooks.secret');
+        Route::post('webhooks/{webhookEndpoint}/deliveries/{delivery}/retry', [WebhookEndpointController::class, 'retry'])->name('webhooks.deliveries.retry');
         Route::delete('webhooks/{webhookEndpoint}', [WebhookEndpointController::class, 'destroy'])->name('webhooks.destroy');
     });

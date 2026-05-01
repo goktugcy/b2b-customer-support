@@ -1,0 +1,137 @@
+openapi: 3.1.0
+info:
+  title: Support Desk API
+  version: 1.0.0
+  description: API v1 for tenant-scoped B2B customer support tickets.
+servers:
+  - url: /api/v1
+security:
+  - sanctumToken: []
+components:
+  securitySchemes:
+    sanctumToken:
+      type: http
+      scheme: bearer
+  schemas:
+    TicketCreate:
+      type: object
+      required: [subject, description]
+      properties:
+        subject: { type: string, maxLength: 255 }
+        description: { type: string, maxLength: 20000 }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        project_id: { type: string, nullable: true }
+        tracker_id: { type: string, nullable: true }
+        category_id: { type: string, nullable: true }
+        tag_names:
+          type: array
+          items: { type: string }
+        custom_fields:
+          type: object
+          additionalProperties: true
+        target_department_ids:
+          type: array
+          items: { type: string }
+        target_user_ids:
+          type: array
+          items: { type: string }
+    Ticket:
+      type: object
+      properties:
+        id: { type: string }
+        company_id: { type: string }
+        subject: { type: string }
+        description: { type: string }
+        status: { type: string }
+        priority: { type: string }
+        source: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+paths:
+  /meta/ticket-options:
+    get:
+      summary: List ticket form options
+      responses:
+        '200':
+          description: Ticket statuses, priorities, projects, trackers, categories, tags, and custom fields.
+  /tickets:
+    get:
+      summary: List tickets visible to the API client tenant
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: per_page
+          schema: { type: integer, maximum: 100 }
+      responses:
+        '200':
+          description: Paginated ticket resources.
+    post:
+      summary: Create a ticket
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string }
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+      responses:
+        '201':
+          description: Created ticket.
+  /tickets/{ticket}:
+    get:
+      summary: Show a ticket
+      parameters:
+        - in: path
+          name: ticket
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Ticket detail.
+  /tickets/{ticket}/comments:
+    post:
+      summary: Add a public ticket comment
+      parameters:
+        - in: path
+          name: ticket
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, maxLength: 20000 }
+      responses:
+        '201':
+          description: Created comment.
+  /tickets/{ticket}/attachments:
+    post:
+      summary: Upload a public ticket attachment
+      description: Uploads are limited by the configured attachment MIME, extension, and size allowlists.
+      parameters:
+        - in: path
+          name: ticket
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Created attachment.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3'
+import { router, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
@@ -26,6 +26,7 @@ type Invitation = {
   email: string
   role_name: string
   accepted_at?: string
+  revoked_at?: string
   expires_at?: string
 }
 
@@ -43,6 +44,8 @@ const form = useForm({
 })
 
 const submit = () => form.post(route('admin.invitations.store'), { preserveScroll: true, onSuccess: () => form.reset('name', 'email') })
+const resend = (invitation: Invitation) => router.patch(route('admin.invitations.resend', invitation.id), {}, { preserveScroll: true })
+const revoke = (invitation: Invitation) => router.delete(route('admin.invitations.revoke', invitation.id), { preserveScroll: true })
 </script>
 
 <template>
@@ -56,7 +59,8 @@ const submit = () => form.post(route('admin.invitations.store'), { preserveScrol
                 <TableHead>Invitee</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Accepted</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead class="w-[160px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -64,7 +68,13 @@ const submit = () => form.post(route('admin.invitations.store'), { preserveScrol
                 <TableCell><p class="font-medium">{{ invitation.name }}</p><p class="text-xs text-muted-foreground">{{ invitation.email }}</p></TableCell>
                 <TableCell class="text-muted-foreground">{{ invitation.company }}</TableCell>
                 <TableCell class="text-muted-foreground">{{ invitation.role_name }}</TableCell>
-                <TableCell class="text-muted-foreground">{{ invitation.accepted_at || 'Pending' }}</TableCell>
+                <TableCell class="text-muted-foreground">{{ invitation.accepted_at ? 'Accepted' : invitation.revoked_at ? 'Revoked' : 'Pending' }}</TableCell>
+                <TableCell>
+                  <div v-if="!invitation.accepted_at" class="flex gap-2">
+                    <Button type="button" size="sm" variant="secondary" @click="resend(invitation)">Resend</Button>
+                    <Button type="button" size="sm" variant="destructive" @click="revoke(invitation)">Revoke</Button>
+                  </div>
+                </TableCell>
               </TableRow>
             </TableBody>
           </Table>

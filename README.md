@@ -1,58 +1,84 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Support Desk
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, Sanctum, PostgreSQL, Redis queues, and Mailpit.
 
-## About Laravel
+## Implemented Production Core
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Provider admin console and customer portal
+- Tenant-scoped companies, users, roles, invitations, tickets, comments, attachments, API tokens, webhooks, and audit logs
+- Company-based 24/7 SLA policies with first-response and resolution breach tracking
+- Real dashboard metrics for provider operations and customer portal workspaces
+- Attachment allowlist validation with file type and size limits
+- Invitation revoke/resend and user role/status management
+- Webhook delivery visibility, test delivery, manual retry, and secret rotation
+- API v1 ticket endpoints with idempotent ticket creation and OpenAPI documentation
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Create or update a provider admin:
 
-## Contributing
+```bash
+php artisan support:create-provider-admin admin@example.com --password=password
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Run the local app, queue workers, logs, and Vite:
 
-## Code of Conduct
+```bash
+composer run dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Operations
 
-## Security Vulnerabilities
+SLA breaches are marked by the scheduled command:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan support:check-sla-breaches
+```
 
-## License
+In production, run Laravel's scheduler every minute and keep queue workers alive for the `notifications` and `webhooks` queues.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Attachment upload validation is configured with:
+
+```env
+SUPPORT_ATTACHMENT_MAX_KB=20480
+SUPPORT_ATTACHMENT_ALLOWED_MIMES=text/plain,text/csv,application/pdf,image/png,image/jpeg,image/gif,application/zip,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+SUPPORT_ATTACHMENT_ALLOWED_EXTENSIONS=txt,csv,pdf,png,jpg,jpeg,gif,zip,json,docx,xlsx
+```
+
+## API
+
+API clients are managed from the customer portal. Use bearer tokens against `/api/v1`.
+
+The OpenAPI description is available at [docs/openapi.yaml](docs/openapi.yaml).
+
+Ticket creation supports an optional `Idempotency-Key` header. Reusing a key with the same body returns the stored response; reusing it with a different body returns a validation error.
+
+Webhook deliveries are signed with:
+
+- `X-Support-Event`
+- `X-Support-Delivery`
+- `X-Support-Timestamp`
+- `X-Support-Signature: sha256=<hmac>`
+
+The signature payload is `<timestamp>.<json-body>` using the endpoint secret.
+
+## Verification
+
+```bash
+php artisan test
+npm run typecheck
+npm run build
+```
+
+## Roadmap
+
+Next phases should add database notification center, saved ticket views, bulk ticket actions, knowledge base, canned responses, mentions, ticket merge/split, CSAT, and PDF/CSV reports.

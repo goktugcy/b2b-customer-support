@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, useForm } from '@inertiajs/vue3'
+import { Link, router, useForm } from '@inertiajs/vue3'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
@@ -12,12 +12,16 @@ import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 
-type Endpoint = { id: number; url: string; status: string; events: string[]; failure_count: number; deliveries_count: number; last_success_at?: string; last_failure_at?: string }
+type Delivery = { id: string; event_type: string; status: string; attempts: number; response_status?: number; response_body_excerpt?: string; next_attempt_at?: string; delivered_at?: string; created_at?: string }
+type Endpoint = { id: number; public_id: string; url: string; status: string; events: string[]; failure_count: number; deliveries_count: number; last_success_at?: string; last_failure_at?: string; deliveries: Delivery[] }
 
 defineProps<{ endpoints: Endpoint[]; events: string[] }>()
 
 const form = useForm({ url: '', events: ['ticket.created', 'ticket.status_changed'] as string[] })
 const submit = () => form.post(route('portal.webhooks.store'), { preserveScroll: true, onSuccess: () => form.reset('url') })
+const testEndpoint = (endpoint: Endpoint) => router.post(route('portal.webhooks.test', endpoint.public_id), {}, { preserveScroll: true })
+const rotateSecret = (endpoint: Endpoint) => router.patch(route('portal.webhooks.secret', endpoint.public_id), {}, { preserveScroll: true })
+const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(route('portal.webhooks.deliveries.retry', [endpoint.public_id, delivery.id]), {}, { preserveScroll: true })
 </script>
 
 <template>
@@ -35,7 +39,21 @@ const submit = () => form.post(route('portal.webhooks.store'), { preserveScroll:
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
                   <Badge :tone="endpoint.status === 'active' ? 'green' : 'red'">{{ endpoint.status }}</Badge>
-                  <Link :href="route('portal.webhooks.destroy', endpoint.id)" method="delete" as="button" class="text-sm font-medium text-destructive">Disable</Link>
+                  <Button type="button" size="sm" variant="secondary" @click="testEndpoint(endpoint)">Test</Button>
+                  <Button type="button" size="sm" variant="secondary" @click="rotateSecret(endpoint)">Rotate</Button>
+                  <Link :href="route('portal.webhooks.destroy', endpoint.public_id)" method="delete" as="button" class="text-sm font-medium text-destructive">Disable</Link>
+                </div>
+              </div>
+              <div v-if="endpoint.deliveries.length" class="mt-3 space-y-2 rounded-md border bg-background p-3">
+                <div v-for="delivery in endpoint.deliveries" :key="delivery.id" class="grid gap-2 text-xs md:grid-cols-[1fr_100px_80px_80px_auto]">
+                  <div class="min-w-0">
+                    <p class="font-medium">{{ delivery.event_type }}</p>
+                    <p class="truncate text-muted-foreground">{{ delivery.response_body_excerpt || delivery.created_at }}</p>
+                  </div>
+                  <Badge :tone="delivery.status === 'success' ? 'green' : delivery.status === 'failed' ? 'red' : 'amber'">{{ delivery.status }}</Badge>
+                  <span class="text-muted-foreground">{{ delivery.response_status || '-' }}</span>
+                  <span class="text-muted-foreground">{{ delivery.attempts }} attempt(s)</span>
+                  <Button type="button" size="sm" variant="secondary" @click="retryDelivery(endpoint, delivery)">Retry</Button>
                 </div>
               </div>
             </div>

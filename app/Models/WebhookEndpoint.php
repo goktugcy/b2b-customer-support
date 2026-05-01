@@ -4,15 +4,17 @@ namespace App\Models;
 
 use App\Enums\WebhookEndpointStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WebhookEndpoint extends Model
 {
-    use BelongsToCompany, HasFactory;
+    use BelongsToCompany, HasFactory, HasPublicId;
 
     protected $fillable = [
+        'public_id',
         'company_id',
         'url',
         'secret',

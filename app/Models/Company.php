@@ -64,6 +64,11 @@ class Company extends Model
         return $this->hasMany(WebhookEndpoint::class);
     }
 
+    public function slaPolicies(): HasMany
+    {
+        return $this->hasMany(CompanySlaPolicy::class);
+    }
+
     public function isProvider(): bool
     {
         return $this->type === CompanyType::Provider;

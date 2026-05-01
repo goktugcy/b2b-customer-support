@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Content\HtmlSanitizer;
+use App\Services\Sla\SlaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,7 @@ class TicketCreationService
         private readonly TicketAttachmentService $attachments,
         private readonly IssueTrackingService $issueTracking,
         private readonly HtmlSanitizer $sanitizer,
+        private readonly SlaService $sla,
     ) {}
 
     /**
@@ -56,6 +58,8 @@ class TicketCreationService
                 'last_customer_activity_at' => $source !== TicketSource::Admin ? now() : null,
                 'last_agent_activity_at' => $source === TicketSource::Admin ? now() : null,
             ]);
+
+            $this->sla->applyToTicket($ticket);
 
             $this->events->record(
                 ticket: $ticket,

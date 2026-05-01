@@ -81,6 +81,7 @@ export type Flash = {
   error?: string | null
   invitation_url?: string | null
   plain_text_token?: string | null
+  webhook_secret?: string | null
 }
 
 export type AuthUser = {
@@ -103,6 +104,15 @@ export type PageProps = {
     user: AuthUser | null
   }
   flash: Flash
+  support: {
+    attachments: {
+      max_kilobytes: number
+      max_bytes: number
+      allowed_extensions: string[]
+      allowed_mimes: string[]
+      accept: string
+    }
+  }
 }
 
 type RouteFunction = {

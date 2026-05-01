@@ -56,6 +56,7 @@ const filteredProviderUsers = computed(() => {
   return props.providerUsers.filter((user) => user.department_ids?.some((id) => form.target_department_ids.includes(id)))
 })
 const targetErrors = computed(() => form.errors.target_department_ids || form.errors.target_user_ids || (form.errors as Record<string, string | undefined>).targets)
+const attachmentErrors = computed(() => form.errors.attachments || Object.entries(form.errors).find(([key]) => key.startsWith('attachments.'))?.[1])
 
 watch(() => form.project_id, () => {
   if (!filteredCategories.value.some((category) => category.id === form.category_id)) {
@@ -162,8 +163,7 @@ const submit = () => form.post(route('portal.tickets.store'), {
         <Card>
           <CardHeader><CardTitle class="text-sm">Attachments</CardTitle></CardHeader>
           <CardContent class="space-y-4">
-            <FilePicker v-model="form.attachments" />
-            <FieldError :message="form.errors.attachments" />
+            <FilePicker v-model="form.attachments" :error="attachmentErrors" />
             <Button type="submit" class="w-full" :disabled="form.processing">Submit ticket</Button>
           </CardContent>
         </Card>

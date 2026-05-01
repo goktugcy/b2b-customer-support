@@ -23,11 +23,23 @@ class InvitationService
      */
     public function create(Company $company, string $email, string $name, string $roleName, User $invitedBy, ?Request $request = null): array
     {
+        $email = Str::lower($email);
+
+        if (Invitation::query()
+            ->where('company_id', $company->id)
+            ->where('email', $email)
+            ->whereNull('accepted_at')
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->exists()) {
+            throw ValidationException::withMessages(['email' => 'This email already has a pending invitation.']);
+        }
+
         $token = Str::random(64);
 
         $invitation = Invitation::create([
             'company_id' => $company->id,
-            'email' => Str::lower($email),
+            'email' => $email,
             'name' => $name,
             'role_name' => $roleName,
             'token_hash' => hash('sha256', $token),
@@ -44,6 +56,49 @@ class InvitationService
         SendInvitationEmail::dispatch($invitation, $token)->afterCommit()->onQueue('notifications');
 
         return compact('invitation', 'token');
+    }
+
+    public function revoke(Invitation $invitation, User $actor, ?Request $request = null): void
+    {
+        if ($invitation->accepted_at !== null) {
+            throw ValidationException::withMessages(['invitation' => 'Accepted invitations cannot be revoked.']);
+        }
+
+        $before = $invitation->only(['revoked_at']);
+
+        $invitation->forceFill(['revoked_at' => now()])->save();
+
+        $this->audit->log('invitation.revoked', $invitation, $actor, before: $before, after: [
+            'revoked_at' => $invitation->revoked_at?->toISOString(),
+        ], request: $request);
+    }
+
+    /**
+     * @return array{invitation: Invitation, token: string}
+     */
+    public function resend(Invitation $invitation, User $actor, ?Request $request = null): array
+    {
+        if ($invitation->accepted_at !== null) {
+            throw ValidationException::withMessages(['invitation' => 'Accepted invitations cannot be resent.']);
+        }
+
+        $token = Str::random(64);
+        $before = $invitation->only(['expires_at', 'revoked_at']);
+
+        $invitation->forceFill([
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->addDays(7),
+            'revoked_at' => null,
+        ])->save();
+
+        $this->audit->log('invitation.resent', $invitation, $actor, before: $before, after: [
+            'expires_at' => $invitation->expires_at?->toISOString(),
+            'revoked_at' => null,
+        ], request: $request);
+
+        SendInvitationEmail::dispatch($invitation, $token)->afterCommit()->onQueue('notifications');
+
+        return ['invitation' => $invitation, 'token' => $token];
     }
 
     public function findAcceptableByToken(string $token): Invitation

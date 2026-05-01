@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Paperclip } from 'lucide-vue-next'
+import { Download, Paperclip } from 'lucide-vue-next'
 
 type Attachment = {
   id: string
   filename: string
+  mime_type?: string | null
   size: number
   visibility?: string
   url: string
@@ -35,6 +36,7 @@ const formatSize = (size: number) => {
       <Paperclip class="h-3.5 w-3.5 shrink-0" />
       <span class="truncate">{{ attachment.filename }}</span>
       <span class="shrink-0 text-muted-foreground/70">{{ formatSize(attachment.size) }}</span>
+      <Download class="h-3.5 w-3.5 shrink-0" />
     </a>
   </div>
 </template>

@@ -4,15 +4,17 @@ namespace App\Models;
 
 use App\Enums\WebhookDeliveryStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WebhookDelivery extends Model
 {
-    use BelongsToCompany, HasFactory;
+    use BelongsToCompany, HasFactory, HasPublicId;
 
     protected $fillable = [
+        'public_id',
         'company_id',
         'webhook_endpoint_id',
         'event_id',

@@ -4,6 +4,7 @@ import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Select from '@/Components/ui/select/Select.vue'
+import Input from '@/Components/ui/input/Input.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
 import Table from '@/Components/ui/table/Table.vue'
@@ -26,11 +27,12 @@ type TicketRow = {
   tags: string[]
   assignee?: string
   created_at: string
+  sla?: string | null
 }
 
 const props = defineProps<{
   tickets: Paginated<TicketRow>
-  filters: { status?: string; project?: string; tracker?: string; tag?: string }
+  filters: { search?: string; queue?: string; status?: string; project?: string; tracker?: string; tag?: string }
   statuses: SelectOption[]
   projects: ProjectOption[]
   trackers: TrackerOption[]
@@ -38,6 +40,8 @@ const props = defineProps<{
 }>()
 
 const filter = useForm({
+  search: props.filters.search ?? '',
+  queue: props.filters.queue ?? '',
   status: props.filters.status ?? '',
   project: props.filters.project ?? '',
   tracker: props.filters.tracker ?? '',
@@ -49,7 +53,15 @@ const applyFilters = () => router.get(route('portal.tickets.index'), filter.data
 <template>
   <PortalLayout title="Tickets">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="grid flex-1 gap-3 md:grid-cols-4">
+      <div class="grid flex-1 gap-3 md:grid-cols-6">
+        <Input v-model="filter.search" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+        <Select v-model="filter.queue" @change="applyFilters">
+          <option value="">All queues</option>
+          <option value="mine">My tickets</option>
+          <option value="unassigned">Unassigned</option>
+          <option value="overdue">Overdue</option>
+          <option value="due_soon">Due soon</option>
+        </Select>
         <Select v-model="filter.status" @change="applyFilters">
           <option value="">All statuses</option>
           <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
@@ -88,6 +100,7 @@ const applyFilters = () => router.get(route('portal.tickets.index'), filter.data
                 <Link :href="route('portal.tickets.show', ticket.id)" class="font-medium transition-colors hover:text-primary">{{ ticket.subject }}</Link>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
+                  <Badge v-if="ticket.sla === 'breached'" tone="red">SLA breached</Badge>
                   <Badge v-for="tag in ticket.tags" :key="tag" tone="neutral">{{ tag }}</Badge>
                 </div>
               </TableCell>

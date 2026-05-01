@@ -43,31 +43,25 @@ class TicketController extends Controller
     {
         $client = $request->user();
 
-        if ($replay = $idempotency->findReplay($request, $client)) {
-            return $replay;
-        }
+        return $idempotency->handle($request, $client, function () use ($request, $tickets, $client): JsonResponse {
+            $ticket = $tickets->create([
+                'company_id' => $client->company_id,
+                'project_id' => $request->validated('project_id'),
+                'tracker_id' => $request->validated('tracker_id'),
+                'category_id' => $request->validated('category_id'),
+                'subject' => $request->validated('subject'),
+                'description' => $request->validated('description'),
+                'priority' => $request->validated('priority') ?? null,
+                'tag_names' => $request->validated('tag_names', []),
+                'custom_fields' => $request->validated('custom_fields', []),
+                'target_department_ids' => $request->validated('target_department_ids', []),
+                'target_user_ids' => $request->validated('target_user_ids', []),
+            ], $client, TicketSource::Api, $request);
 
-        $ticket = $tickets->create([
-            'company_id' => $client->company_id,
-            'project_id' => $request->validated('project_id'),
-            'tracker_id' => $request->validated('tracker_id'),
-            'category_id' => $request->validated('category_id'),
-            'subject' => $request->validated('subject'),
-            'description' => $request->validated('description'),
-            'priority' => $request->validated('priority') ?? null,
-            'tag_names' => $request->validated('tag_names', []),
-            'custom_fields' => $request->validated('custom_fields', []),
-            'target_department_ids' => $request->validated('target_department_ids', []),
-            'target_user_ids' => $request->validated('target_user_ids', []),
-        ], $client, TicketSource::Api, $request);
-
-        $response = (new TicketResource($ticket->load(['company', 'assignee', 'supportProject', 'tracker.customFields.options', 'category', 'tags', 'customFieldValues.customField.options', 'targetDepartments', 'targetUsers'])))
-            ->response()
-            ->setStatusCode(201);
-
-        $idempotency->store($request, $client, $response);
-
-        return $response;
+            return (new TicketResource($ticket->load(['company', 'assignee', 'supportProject', 'tracker.customFields.options', 'category', 'tags', 'customFieldValues.customField.options', 'targetDepartments', 'targetUsers'])))
+                ->response()
+                ->setStatusCode(201);
+        });
     }
 
     public function show(Request $request, Ticket $ticket): TicketResource

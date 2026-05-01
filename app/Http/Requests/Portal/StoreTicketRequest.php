@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Portal;
 
 use App\Enums\TicketPriority;
+use App\Support\AttachmentValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -31,7 +32,7 @@ class StoreTicketRequest extends FormRequest
             'target_user_ids' => ['nullable', 'array'],
             'target_user_ids.*' => ['string', 'exists:users,public_id'],
             'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'max:20480'],
+            'attachments.*' => AttachmentValidationRules::upload(required: false),
         ];
     }
 
