@@ -3,5 +3,5 @@ defineProps<{ message?: string }>()
 </script>
 
 <template>
-  <p v-if="message" class="mt-1 text-sm text-rose-700">{{ message }}</p>
+  <p v-if="message" class="mt-1.5 text-sm text-destructive">{{ message }}</p>
 </template>

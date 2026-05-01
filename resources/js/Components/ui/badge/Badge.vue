@@ -10,16 +10,16 @@ const props = withDefaults(defineProps<{
 })
 
 const toneClass = computed(() => ({
-  neutral: 'bg-slate-100 text-slate-700',
-  green: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  amber: 'bg-amber-50 text-amber-800 ring-amber-200',
-  red: 'bg-rose-50 text-rose-700 ring-rose-200',
-  blue: 'bg-sky-50 text-sky-700 ring-sky-200',
+  neutral: 'border-transparent bg-secondary text-secondary-foreground',
+  green: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  amber: 'border-amber-200 bg-amber-50 text-amber-800',
+  red: 'border-red-200 bg-red-50 text-red-700',
+  blue: 'border-blue-200 bg-blue-50 text-blue-700',
 }[props.tone]))
 </script>
 
 <template>
-  <span :class="cn('inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-slate-200', toneClass, props.class)">
+  <span :class="cn('inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors', toneClass, props.class)">
     <slot />
   </span>
 </template>

@@ -1,15 +1,9 @@
-<script setup>
-defineProps({
-    message: {
-        type: String,
-    },
-});
+<script setup lang="ts">
+defineProps<{ message?: string }>()
 </script>
 
 <template>
-    <div v-show="message">
-        <p class="text-sm text-red-600">
-            {{ message }}
-        </p>
-    </div>
+  <p v-show="message" class="text-sm text-destructive">
+    {{ message }}
+  </p>
 </template>

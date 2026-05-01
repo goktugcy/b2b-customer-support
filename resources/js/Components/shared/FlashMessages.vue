@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3'
+import Alert from '@/Components/ui/alert/Alert.vue'
+import AlertTitle from '@/Components/ui/alert/AlertTitle.vue'
+import AlertDescription from '@/Components/ui/alert/AlertDescription.vue'
 import type { PageProps } from '@/types'
 
 const page = usePage<PageProps>()
@@ -7,19 +10,19 @@ const page = usePage<PageProps>()
 
 <template>
   <div v-if="page.props.flash.success || page.props.flash.error || page.props.flash.invitation_url || page.props.flash.plain_text_token" class="space-y-2">
-    <div v-if="page.props.flash.success" class="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-      {{ page.props.flash.success }}
-    </div>
-    <div v-if="page.props.flash.error" class="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-      {{ page.props.flash.error }}
-    </div>
-    <div v-if="page.props.flash.invitation_url" class="rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-      <div class="font-medium">Invitation URL</div>
-      <div class="mt-1 break-all font-mono text-xs">{{ page.props.flash.invitation_url }}</div>
-    </div>
-    <div v-if="page.props.flash.plain_text_token" class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-      <div class="font-medium">API token</div>
-      <div class="mt-1 break-all font-mono text-xs">{{ page.props.flash.plain_text_token }}</div>
-    </div>
+    <Alert v-if="page.props.flash.success" variant="success">
+      <AlertDescription>{{ page.props.flash.success }}</AlertDescription>
+    </Alert>
+    <Alert v-if="page.props.flash.error" variant="destructive">
+      <AlertDescription>{{ page.props.flash.error }}</AlertDescription>
+    </Alert>
+    <Alert v-if="page.props.flash.invitation_url" variant="info">
+      <AlertTitle>Invitation URL</AlertTitle>
+      <AlertDescription class="break-all font-mono text-xs">{{ page.props.flash.invitation_url }}</AlertDescription>
+    </Alert>
+    <Alert v-if="page.props.flash.plain_text_token" variant="warning">
+      <AlertTitle>API token</AlertTitle>
+      <AlertDescription class="break-all font-mono text-xs">{{ page.props.flash.plain_text_token }}</AlertDescription>
+    </Alert>
   </div>
 </template>

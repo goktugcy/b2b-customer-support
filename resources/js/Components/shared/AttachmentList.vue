@@ -30,11 +30,11 @@ const formatSize = (size: number) => {
       v-for="attachment in attachments"
       :key="attachment.id"
       :href="attachment.url"
-      class="inline-flex max-w-full items-center gap-2 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-teal-300 hover:text-teal-800"
+      class="inline-flex max-w-full items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
     >
       <Paperclip class="h-3.5 w-3.5 shrink-0" />
       <span class="truncate">{{ attachment.filename }}</span>
-      <span class="shrink-0 text-slate-400">{{ formatSize(attachment.size) }}</span>
+      <span class="shrink-0 text-muted-foreground/70">{{ formatSize(attachment.size) }}</span>
     </a>
   </div>
 </template>

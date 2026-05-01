@@ -4,6 +4,9 @@ import AuthLayout from '@/Layouts/AuthLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
+import Alert from '@/Components/ui/alert/Alert.vue'
+import AlertDescription from '@/Components/ui/alert/AlertDescription.vue'
+import AlertTitle from '@/Components/ui/alert/AlertTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 
 const props = defineProps<{
@@ -34,11 +37,10 @@ const submit = () => {
   <AuthLayout title="Accept invitation">
     <Head title="Accept invitation" />
 
-    <div class="mb-5 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
-      <p class="font-medium text-slate-900">{{ invitation.company }}</p>
-      <p class="mt-1 text-slate-600">{{ invitation.email }}</p>
-      <p class="mt-1 text-slate-600">{{ invitation.role }}</p>
-    </div>
+    <Alert class="mb-5">
+      <AlertTitle>{{ invitation.company }}</AlertTitle>
+      <AlertDescription>{{ invitation.email }} · {{ invitation.role }}</AlertDescription>
+    </Alert>
 
     <form class="space-y-4" @submit.prevent="submit">
       <div>

@@ -1,30 +1,59 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+        secondary: 'border border-input bg-background shadow-sm hover:bg-secondary hover:text-secondary-foreground',
+        ghost: 'hover:bg-secondary hover:text-secondary-foreground',
+        danger: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+        outline: 'border border-input bg-background shadow-sm hover:bg-secondary hover:text-secondary-foreground',
+        link: 'h-auto p-0 text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'default',
+    },
+  },
+)
+
+type ButtonVariants = VariantProps<typeof buttonVariants>
 
 const props = withDefaults(defineProps<{
   type?: 'button' | 'submit' | 'reset'
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: ButtonVariants['variant']
+  size?: ButtonVariants['size']
   disabled?: boolean
   class?: string
 }>(), {
   type: 'button',
   variant: 'primary',
+  size: 'default',
   disabled: false,
 })
 
-const variants = {
-  primary: 'bg-teal-700 text-white hover:bg-teal-800 focus-visible:ring-teal-700',
-  secondary: 'border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 focus-visible:ring-slate-500',
-  ghost: 'text-slate-700 hover:bg-slate-100 focus-visible:ring-slate-500',
-  danger: 'bg-rose-700 text-white hover:bg-rose-800 focus-visible:ring-rose-700',
-}
+const classes = computed(() => cn(buttonVariants({ variant: props.variant, size: props.size }), props.class))
 </script>
 
 <template>
   <button
     :type="type"
     :disabled="disabled"
-    :class="cn('inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50', variants[variant], props.class)"
+    :class="classes"
   >
     <slot />
   </button>

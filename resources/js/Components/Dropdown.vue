@@ -1,47 +1,42 @@
-<script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const props = defineProps({
-    align: {
-        type: String,
-        default: 'right',
-    },
-    width: {
-        type: String,
-        default: '48',
-    },
-    contentClasses: {
-        type: String,
-        default: 'py-1 bg-white',
-    },
-});
+const props = withDefaults(defineProps<{
+  align?: 'left' | 'right' | 'top'
+  width?: string | number
+  contentClasses?: string
+}>(), {
+  align: 'right',
+  width: '48',
+  contentClasses: 'py-1 bg-card',
+})
 
-const closeOnEscape = (e) => {
-    if (open.value && e.key === 'Escape') {
-        open.value = false;
-    }
-};
+const closeOnEscape = (event: KeyboardEvent) => {
+  if (open.value && event.key === 'Escape') {
+    open.value = false
+  }
+}
 
-onMounted(() => document.addEventListener('keydown', closeOnEscape));
-onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
+onMounted(() => document.addEventListener('keydown', closeOnEscape))
+onUnmounted(() => document.removeEventListener('keydown', closeOnEscape))
 
 const widthClass = computed(() => {
-    return {
-        48: 'w-48',
-    }[props.width.toString()];
-});
+  return {
+    48: 'w-48',
+  }[props.width.toString()]
+})
 
 const alignmentClasses = computed(() => {
-    if (props.align === 'left') {
-        return 'ltr:origin-top-left rtl:origin-top-right start-0';
-    } else if (props.align === 'right') {
-        return 'ltr:origin-top-right rtl:origin-top-left end-0';
-    } else {
-        return 'origin-top';
-    }
-});
+  if (props.align === 'left') {
+    return 'ltr:origin-top-left rtl:origin-top-right start-0'
+  } else if (props.align === 'right') {
+    return 'ltr:origin-top-right rtl:origin-top-left end-0'
+  }
 
-const open = ref(false);
+  return 'origin-top'
+})
+
+const open = ref(false)
 </script>
 
 <template>
@@ -67,13 +62,13 @@ const open = ref(false);
         >
             <div
                 v-show="open"
-                class="absolute z-50 mt-2 rounded-md shadow-lg"
+                class="absolute z-50 mt-2 rounded-md shadow-panel"
                 :class="[widthClass, alignmentClasses]"
                 style="display: none"
                 @click="open = false"
             >
                 <div
-                    class="rounded-md ring-1 ring-black ring-opacity-5"
+                    class="rounded-md border"
                     :class="contentClasses"
                 >
                     <slot name="content" />

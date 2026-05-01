@@ -9,6 +9,16 @@ import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Select from '@/Components/ui/select/Select.vue'
+import Card from '@/Components/ui/card/Card.vue'
+import CardContent from '@/Components/ui/card/CardContent.vue'
+import CardHeader from '@/Components/ui/card/CardHeader.vue'
+import CardTitle from '@/Components/ui/card/CardTitle.vue'
+import Table from '@/Components/ui/table/Table.vue'
+import TableBody from '@/Components/ui/table/TableBody.vue'
+import TableCell from '@/Components/ui/table/TableCell.vue'
+import TableHead from '@/Components/ui/table/TableHead.vue'
+import TableHeader from '@/Components/ui/table/TableHeader.vue'
+import TableRow from '@/Components/ui/table/TableRow.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
@@ -79,109 +89,117 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
   <AdminLayout title="Tickets">
     <section class="grid gap-6 xl:grid-cols-[1fr_360px]">
       <div class="space-y-4">
-        <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-          <div class="grid gap-3 md:grid-cols-4">
-            <Select v-model="filter.status" @change="applyFilters">
-              <option value="">All statuses</option>
-              <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
-            </Select>
-            <Select v-model="filter.priority" @change="applyFilters">
-              <option value="">All priorities</option>
-              <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
-            </Select>
-            <Select v-model="filter.company" class="md:col-span-2" @change="applyFilters">
-              <option value="">All companies</option>
-              <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
-            </Select>
-          </div>
-        </div>
+        <Card>
+          <CardContent class="p-4">
+            <div class="grid gap-3 md:grid-cols-4">
+              <Select v-model="filter.status" @change="applyFilters">
+                <option value="">All statuses</option>
+                <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
+              </Select>
+              <Select v-model="filter.priority" @change="applyFilters">
+                <option value="">All priorities</option>
+                <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
+              </Select>
+              <Select v-model="filter.company" class="md:col-span-2" @change="applyFilters">
+                <option value="">All companies</option>
+                <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div class="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-          <table class="w-full table-fixed divide-y divide-slate-200">
-            <thead class="bg-slate-50">
-              <tr class="text-left text-xs font-medium uppercase text-slate-500">
-                <th class="w-[42%] px-4 py-3">Ticket</th>
-                <th class="px-4 py-3">Company</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3">Priority</th>
-              </tr>
-            </thead>
-            <tbody v-if="tickets.data.length" class="divide-y divide-slate-100">
-              <tr v-for="ticket in tickets.data" :key="ticket.id" class="text-sm">
-                <td class="px-4 py-3">
-                  <Link :href="route('admin.tickets.show', ticket.id)" class="font-medium text-slate-950 hover:text-teal-800">
+        <Card class="overflow-hidden">
+          <CardContent class="p-0">
+            <Table class="table-fixed">
+              <TableHeader class="bg-muted/50">
+                <TableRow>
+                  <TableHead class="w-[42%]">Ticket</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Priority</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody v-if="tickets.data.length">
+                <TableRow v-for="ticket in tickets.data" :key="ticket.id">
+                  <TableCell>
+                    <Link :href="route('admin.tickets.show', ticket.id)" class="font-medium text-foreground transition-colors hover:text-primary">
                     {{ ticket.subject }}
-                  </Link>
-                  <p class="mt-1 text-xs text-slate-500">{{ ticket.assignee || 'Unassigned' }}</p>
-                </td>
-                <td class="px-4 py-3 text-slate-600">{{ ticket.company }}</td>
-                <td class="px-4 py-3"><Badge :tone="statusTone(ticket.status)">{{ ticket.status }}</Badge></td>
-                <td class="px-4 py-3 text-slate-600">{{ ticket.priority }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="!tickets.data.length" class="p-4">
-            <EmptyState title="No tickets found" />
-          </div>
-        </div>
+                    </Link>
+                    <p class="mt-1 text-xs text-muted-foreground">{{ ticket.assignee || 'Unassigned' }}</p>
+                  </TableCell>
+                  <TableCell class="text-muted-foreground">{{ ticket.company }}</TableCell>
+                  <TableCell><Badge :tone="statusTone(ticket.status)">{{ ticket.status }}</Badge></TableCell>
+                  <TableCell class="text-muted-foreground">{{ ticket.priority }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+            <div v-if="!tickets.data.length" class="p-4">
+              <EmptyState title="No tickets found" />
+            </div>
+          </CardContent>
+        </Card>
 
         <Pagination :links="tickets.links" />
       </div>
 
-      <form class="rounded-md border border-slate-200 bg-white p-4 shadow-sm" @submit.prevent="createTicket">
-        <div class="mb-4 flex items-center gap-2">
-          <Plus class="h-4 w-4 text-teal-700" />
-          <h2 class="text-sm font-semibold text-slate-950">Create ticket</h2>
-        </div>
-        <div class="space-y-4">
-          <div>
-            <Label>Company</Label>
-            <Select v-model="form.company_id" class="mt-1">
-              <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
-            </Select>
-            <FieldError :message="form.errors.company_id" />
-          </div>
-          <div>
-            <Label>Subject</Label>
-            <Input v-model="form.subject" class="mt-1" required />
-            <FieldError :message="form.errors.subject" />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea v-model="form.description" class="mt-1" required />
-            <FieldError :message="form.errors.description" />
-          </div>
-          <div>
-            <Label>Priority</Label>
-            <Select v-model="form.priority" class="mt-1">
-              <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
-            </Select>
-          </div>
-          <div>
-            <Label>Target departments</Label>
-            <MultiSelectChips v-model="form.target_department_ids" class="mt-1" :options="departments" placeholder="Add department" />
-            <FieldError :message="targetErrors" />
-          </div>
-          <div>
-            <Label>Target users</Label>
-            <MultiSelectChips v-model="form.target_user_ids" class="mt-1" :options="providerUsers" placeholder="Add provider user" />
-            <FieldError :message="form.errors.target_user_ids" />
-          </div>
-          <div>
-            <Label>Assignee</Label>
-            <Select v-model="form.assigned_to_user_id" class="mt-1">
-              <option value="">Unassigned</option>
-              <option v-for="user in providerUsers" :key="user.id" :value="user.id">{{ user.name }}</option>
-            </Select>
-          </div>
-          <div>
-            <Label>Attachments</Label>
-            <FilePicker v-model="form.attachments" class="mt-1" />
-            <FieldError :message="form.errors.attachments" />
-          </div>
-          <Button type="submit" class="w-full" :disabled="form.processing">Create</Button>
-        </div>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-sm">
+            <Plus class="h-4 w-4 text-primary" />
+            Create ticket
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="space-y-4" @submit.prevent="createTicket">
+            <div>
+              <Label>Company</Label>
+              <Select v-model="form.company_id" class="mt-1">
+                <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
+              </Select>
+              <FieldError :message="form.errors.company_id" />
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input v-model="form.subject" class="mt-1" required />
+              <FieldError :message="form.errors.subject" />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea v-model="form.description" class="mt-1" required />
+              <FieldError :message="form.errors.description" />
+            </div>
+            <div>
+              <Label>Priority</Label>
+              <Select v-model="form.priority" class="mt-1">
+                <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
+              </Select>
+            </div>
+            <div>
+              <Label>Target departments</Label>
+              <MultiSelectChips v-model="form.target_department_ids" class="mt-1" :options="departments" placeholder="Add department" />
+              <FieldError :message="targetErrors" />
+            </div>
+            <div>
+              <Label>Target users</Label>
+              <MultiSelectChips v-model="form.target_user_ids" class="mt-1" :options="providerUsers" placeholder="Add provider user" />
+              <FieldError :message="form.errors.target_user_ids" />
+            </div>
+            <div>
+              <Label>Assignee</Label>
+              <Select v-model="form.assigned_to_user_id" class="mt-1">
+                <option value="">Unassigned</option>
+                <option v-for="user in providerUsers" :key="user.id" :value="user.id">{{ user.name }}</option>
+              </Select>
+            </div>
+            <div>
+              <Label>Attachments</Label>
+              <FilePicker v-model="form.attachments" class="mt-1" />
+              <FieldError :message="form.errors.attachments" />
+            </div>
+            <Button type="submit" class="w-full" :disabled="form.processing">Create</Button>
+          </form>
+        </CardContent>
+      </Card>
     </section>
   </AdminLayout>
 </template>

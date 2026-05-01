@@ -47,15 +47,15 @@ const formatSize = (size: number) => {
       class="hidden"
       @change="onInput"
     />
-    <Button type="button" variant="secondary" @click="input?.click()">
+    <Button type="button" variant="secondary" size="sm" @click="input?.click()">
       <Paperclip class="h-4 w-4" />
       Files
     </Button>
 
     <ul v-if="model.length" class="space-y-2">
-      <li v-for="(file, index) in model" :key="`${file.name}-${index}`" class="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm">
+      <li v-for="(file, index) in model" :key="`${file.name}-${index}`" class="flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 text-sm">
         <span class="min-w-0 truncate">{{ file.name }} · {{ formatSize(file.size) }}</span>
-        <button type="button" class="rounded text-slate-500 hover:text-slate-950" @click="remove(index)">
+        <button type="button" class="rounded text-muted-foreground transition-colors hover:text-foreground" @click="remove(index)">
           <X class="h-4 w-4" />
         </button>
       </li>

@@ -1,14 +1,12 @@
-<script setup>
-defineProps({
-    value: {
-        type: String,
-    },
-});
+<script setup lang="ts">
+import Label from '@/Components/ui/label/Label.vue'
+
+defineProps<{ value?: string }>()
 </script>
 
 <template>
-    <label class="block text-sm font-medium text-gray-700">
-        <span v-if="value">{{ value }}</span>
-        <span v-else><slot /></span>
-    </label>
+  <Label>
+    <span v-if="value">{{ value }}</span>
+    <span v-else><slot /></span>
+  </Label>
 </template>

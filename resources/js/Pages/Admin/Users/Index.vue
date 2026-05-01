@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Card from '@/Components/ui/card/Card.vue'
+import CardContent from '@/Components/ui/card/CardContent.vue'
+import Table from '@/Components/ui/table/Table.vue'
+import TableBody from '@/Components/ui/table/TableBody.vue'
+import TableCell from '@/Components/ui/table/TableCell.vue'
+import TableHead from '@/Components/ui/table/TableHead.vue'
+import TableHeader from '@/Components/ui/table/TableHeader.vue'
+import TableRow from '@/Components/ui/table/TableRow.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import type { Paginated } from '@/types'
 
@@ -19,29 +27,31 @@ defineProps<{ users: Paginated<UserRow> }>()
 
 <template>
   <AdminLayout title="Users">
-    <div class="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-      <table class="w-full table-fixed divide-y divide-slate-200">
-        <thead class="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
-          <tr>
-            <th class="w-[32%] px-4 py-3">User</th>
-            <th class="px-4 py-3">Company</th>
-            <th class="px-4 py-3">Roles</th>
-            <th class="px-4 py-3">Status</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="user in users.data" :key="user.id" class="text-sm">
-            <td class="px-4 py-3">
-              <p class="font-medium">{{ user.name }}</p>
-              <p class="text-xs text-slate-500">{{ user.email }}</p>
-            </td>
-            <td class="px-4 py-3 text-slate-600">{{ user.company }}</td>
-            <td class="px-4 py-3 text-slate-600">{{ user.roles.join(', ') }}</td>
-            <td class="px-4 py-3"><Badge :tone="user.status === 'active' ? 'green' : 'red'">{{ user.status }}</Badge></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Card class="overflow-hidden">
+      <CardContent class="p-0">
+        <Table class="table-fixed">
+          <TableHeader class="bg-muted/50">
+            <TableRow>
+              <TableHead class="w-[32%]">User</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Roles</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="user in users.data" :key="user.id">
+              <TableCell>
+                <p class="font-medium">{{ user.name }}</p>
+                <p class="text-xs text-muted-foreground">{{ user.email }}</p>
+              </TableCell>
+              <TableCell class="text-muted-foreground">{{ user.company }}</TableCell>
+              <TableCell class="text-muted-foreground">{{ user.roles.join(', ') }}</TableCell>
+              <TableCell><Badge :tone="user.status === 'active' ? 'green' : 'red'">{{ user.status }}</Badge></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
     <div class="mt-4"><Pagination :links="users.links" /></div>
   </AdminLayout>
 </template>

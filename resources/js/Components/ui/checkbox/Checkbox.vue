@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils'
 
-const model = defineModel<boolean>({ default: false })
-const props = defineProps<{ class?: string }>()
+const model = defineModel<boolean | Array<string | number | boolean>>({ default: false })
+const props = defineProps<{ class?: string; value?: string | number | boolean }>()
 </script>
 
 <template>
   <input
     v-model="model"
     type="checkbox"
-    :class="cn('h-4 w-4 rounded border-slate-300 text-teal-700 shadow-sm focus:ring-teal-700', props.class)"
+    :value="value"
+    :class="cn('h-4 w-4 rounded border-input text-primary shadow-sm focus:ring-ring focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50', props.class)"
   />
 </template>

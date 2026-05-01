@@ -4,6 +4,17 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
+import Select from '@/Components/ui/select/Select.vue'
+import Card from '@/Components/ui/card/Card.vue'
+import CardContent from '@/Components/ui/card/CardContent.vue'
+import CardHeader from '@/Components/ui/card/CardHeader.vue'
+import CardTitle from '@/Components/ui/card/CardTitle.vue'
+import Table from '@/Components/ui/table/Table.vue'
+import TableBody from '@/Components/ui/table/TableBody.vue'
+import TableCell from '@/Components/ui/table/TableCell.vue'
+import TableHead from '@/Components/ui/table/TableHead.vue'
+import TableHeader from '@/Components/ui/table/TableHeader.vue'
+import TableRow from '@/Components/ui/table/TableRow.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import type { Paginated } from '@/types'
@@ -37,31 +48,40 @@ const submit = () => form.post(route('admin.invitations.store'), { preserveScrol
 <template>
   <AdminLayout title="Invitations">
     <section class="grid gap-6 xl:grid-cols-[1fr_340px]">
-      <div class="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <table class="w-full table-fixed divide-y divide-slate-200">
-          <thead class="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
-            <tr><th class="px-4 py-3">Invitee</th><th class="px-4 py-3">Company</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">Accepted</th></tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="invitation in invitations.data" :key="invitation.id" class="text-sm">
-              <td class="px-4 py-3"><p class="font-medium">{{ invitation.name }}</p><p class="text-xs text-slate-500">{{ invitation.email }}</p></td>
-              <td class="px-4 py-3 text-slate-600">{{ invitation.company }}</td>
-              <td class="px-4 py-3 text-slate-600">{{ invitation.role_name }}</td>
-              <td class="px-4 py-3 text-slate-600">{{ invitation.accepted_at || 'Pending' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <form class="rounded-md border border-slate-200 bg-white p-4 shadow-sm" @submit.prevent="submit">
-        <h2 class="text-sm font-semibold">Invite user</h2>
-        <div class="mt-4 space-y-3">
-          <div><Label>Company</Label><select v-model="form.company_id" class="mt-1 h-10 w-full rounded-md border-slate-300 text-sm"><option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option></select></div>
-          <div><Label>Name</Label><Input v-model="form.name" class="mt-1" /><FieldError :message="form.errors.name" /></div>
-          <div><Label>Email</Label><Input v-model="form.email" type="email" class="mt-1" /><FieldError :message="form.errors.email" /></div>
-          <div><Label>Role</Label><select v-model="form.role_name" class="mt-1 h-10 w-full rounded-md border-slate-300 text-sm"><option v-for="role in roles" :key="role" :value="role">{{ role }}</option></select><FieldError :message="form.errors.role_name" /></div>
-          <Button type="submit" class="w-full">Send invitation</Button>
-        </div>
-      </form>
+      <Card class="overflow-hidden">
+        <CardContent class="p-0">
+          <Table class="table-fixed">
+            <TableHeader class="bg-muted/50">
+              <TableRow>
+                <TableHead>Invitee</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Accepted</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="invitation in invitations.data" :key="invitation.id">
+                <TableCell><p class="font-medium">{{ invitation.name }}</p><p class="text-xs text-muted-foreground">{{ invitation.email }}</p></TableCell>
+                <TableCell class="text-muted-foreground">{{ invitation.company }}</TableCell>
+                <TableCell class="text-muted-foreground">{{ invitation.role_name }}</TableCell>
+                <TableCell class="text-muted-foreground">{{ invitation.accepted_at || 'Pending' }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle class="text-sm">Invite user</CardTitle></CardHeader>
+        <CardContent>
+          <form class="space-y-3" @submit.prevent="submit">
+            <div><Label>Company</Label><Select v-model="form.company_id" class="mt-1"><option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option></Select></div>
+            <div><Label>Name</Label><Input v-model="form.name" class="mt-1" /><FieldError :message="form.errors.name" /></div>
+            <div><Label>Email</Label><Input v-model="form.email" type="email" class="mt-1" /><FieldError :message="form.errors.email" /></div>
+            <div><Label>Role</Label><Select v-model="form.role_name" class="mt-1"><option v-for="role in roles" :key="role" :value="role">{{ role }}</option></Select><FieldError :message="form.errors.role_name" /></div>
+            <Button type="submit" class="w-full">Send invitation</Button>
+          </form>
+        </CardContent>
+      </Card>
     </section>
     <div class="mt-4"><Pagination :links="invitations.links" /></div>
   </AdminLayout>

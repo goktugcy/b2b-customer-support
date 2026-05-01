@@ -3,6 +3,15 @@ import { Link, router, useForm } from '@inertiajs/vue3'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Select from '@/Components/ui/select/Select.vue'
+import Card from '@/Components/ui/card/Card.vue'
+import CardContent from '@/Components/ui/card/CardContent.vue'
+import Table from '@/Components/ui/table/Table.vue'
+import TableBody from '@/Components/ui/table/TableBody.vue'
+import TableCell from '@/Components/ui/table/TableCell.vue'
+import TableHead from '@/Components/ui/table/TableHead.vue'
+import TableHeader from '@/Components/ui/table/TableHeader.vue'
+import TableRow from '@/Components/ui/table/TableRow.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import type { Paginated, SelectOption } from '@/types'
@@ -29,29 +38,31 @@ const applyFilters = () => router.get(route('portal.tickets.index'), filter.data
 <template>
   <PortalLayout title="Tickets">
     <div class="flex items-center justify-between gap-4">
-      <select v-model="filter.status" class="h-10 rounded-md border-slate-300 text-sm" @change="applyFilters">
+      <Select v-model="filter.status" class="max-w-xs" @change="applyFilters">
         <option value="">All statuses</option>
         <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
-      </select>
+      </Select>
       <Link :href="route('portal.tickets.create')"><Button>Create ticket</Button></Link>
     </div>
 
-    <div class="mt-4 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-      <table class="w-full table-fixed divide-y divide-slate-200">
-        <thead class="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
-          <tr><th class="w-[52%] px-4 py-3">Ticket</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Priority</th><th class="px-4 py-3">Assignee</th></tr>
-        </thead>
-        <tbody v-if="tickets.data.length" class="divide-y divide-slate-100">
-          <tr v-for="ticket in tickets.data" :key="ticket.id" class="text-sm">
-            <td class="px-4 py-3"><Link :href="route('portal.tickets.show', ticket.id)" class="font-medium hover:text-teal-800">{{ ticket.subject }}</Link></td>
-            <td class="px-4 py-3"><Badge tone="blue">{{ ticket.status }}</Badge></td>
-            <td class="px-4 py-3 text-slate-600">{{ ticket.priority }}</td>
-            <td class="px-4 py-3 text-slate-600">{{ ticket.assignee || 'Unassigned' }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-if="!tickets.data.length" class="p-4"><EmptyState title="No tickets yet" description="Create a ticket when your team needs help." /></div>
-    </div>
+    <Card class="mt-4 overflow-hidden">
+      <CardContent class="p-0">
+        <Table class="table-fixed">
+          <TableHeader class="bg-muted/50">
+            <TableRow><TableHead class="w-[52%]">Ticket</TableHead><TableHead>Status</TableHead><TableHead>Priority</TableHead><TableHead>Assignee</TableHead></TableRow>
+          </TableHeader>
+          <TableBody v-if="tickets.data.length">
+            <TableRow v-for="ticket in tickets.data" :key="ticket.id">
+              <TableCell><Link :href="route('portal.tickets.show', ticket.id)" class="font-medium transition-colors hover:text-primary">{{ ticket.subject }}</Link></TableCell>
+              <TableCell><Badge tone="blue">{{ ticket.status }}</Badge></TableCell>
+              <TableCell class="text-muted-foreground">{{ ticket.priority }}</TableCell>
+              <TableCell class="text-muted-foreground">{{ ticket.assignee || 'Unassigned' }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+        <div v-if="!tickets.data.length" class="p-4"><EmptyState title="No tickets yet" description="Create a ticket when your team needs help." /></div>
+      </CardContent>
+    </Card>
     <div class="mt-4"><Pagination :links="tickets.links" /></div>
   </PortalLayout>
 </template>

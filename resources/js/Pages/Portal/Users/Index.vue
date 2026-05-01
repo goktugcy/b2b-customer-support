@@ -5,6 +5,11 @@ import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Select from '@/Components/ui/select/Select.vue'
+import Card from '@/Components/ui/card/Card.vue'
+import CardContent from '@/Components/ui/card/CardContent.vue'
+import CardHeader from '@/Components/ui/card/CardHeader.vue'
+import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 
 type User = { id: string; name: string; email: string; status: string; roles: string[] }
@@ -19,24 +24,28 @@ const submit = () => form.post(route('portal.users.invitations.store'), { preser
 <template>
   <PortalLayout title="Users">
     <section class="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <div class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="text-sm font-semibold">Company users</h2>
-        <div class="mt-4 divide-y divide-slate-100">
-          <div v-for="user in users" :key="user.id" class="flex items-center justify-between gap-4 py-3 text-sm">
-            <div><p class="font-medium">{{ user.name }}</p><p class="text-slate-500">{{ user.email }} · {{ user.roles.join(', ') }}</p></div>
-            <Badge :tone="user.status === 'active' ? 'green' : 'red'">{{ user.status }}</Badge>
+      <Card>
+        <CardHeader><CardTitle class="text-sm">Company users</CardTitle></CardHeader>
+        <CardContent>
+          <div class="divide-y">
+            <div v-for="user in users" :key="user.id" class="flex items-center justify-between gap-4 py-3 text-sm first:pt-0 last:pb-0">
+              <div><p class="font-medium">{{ user.name }}</p><p class="text-muted-foreground">{{ user.email }} · {{ user.roles.join(', ') }}</p></div>
+              <Badge :tone="user.status === 'active' ? 'green' : 'red'">{{ user.status }}</Badge>
+            </div>
           </div>
-        </div>
-      </div>
-      <form class="rounded-md border border-slate-200 bg-white p-4 shadow-sm" @submit.prevent="submit">
-        <h2 class="text-sm font-semibold">Invite user</h2>
-        <div class="mt-4 space-y-3">
-          <div><Label>Name</Label><Input v-model="form.name" class="mt-1" /><FieldError :message="form.errors.name" /></div>
-          <div><Label>Email</Label><Input v-model="form.email" type="email" class="mt-1" /><FieldError :message="form.errors.email" /></div>
-          <div><Label>Role</Label><select v-model="form.role_name" class="mt-1 h-10 w-full rounded-md border-slate-300 text-sm"><option v-for="role in roles" :key="role" :value="role">{{ role }}</option></select></div>
-          <Button type="submit" class="w-full">Send invitation</Button>
-        </div>
-      </form>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle class="text-sm">Invite user</CardTitle></CardHeader>
+        <CardContent>
+          <form class="space-y-3" @submit.prevent="submit">
+            <div><Label>Name</Label><Input v-model="form.name" class="mt-1" /><FieldError :message="form.errors.name" /></div>
+            <div><Label>Email</Label><Input v-model="form.email" type="email" class="mt-1" /><FieldError :message="form.errors.email" /></div>
+            <div><Label>Role</Label><Select v-model="form.role_name" class="mt-1"><option v-for="role in roles" :key="role" :value="role">{{ role }}</option></Select></div>
+            <Button type="submit" class="w-full">Send invitation</Button>
+          </form>
+        </CardContent>
+      </Card>
     </section>
   </PortalLayout>
 </template>

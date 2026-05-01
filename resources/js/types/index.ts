@@ -32,6 +32,7 @@ export type AuthUser = {
   id: string
   name: string
   email: string
+  email_verified_at?: string | null
   is_provider: boolean
   company: {
     id: string
