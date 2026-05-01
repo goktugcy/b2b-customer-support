@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { ArrowLeft, X } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
-import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
@@ -16,8 +15,12 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import AttachmentList from '@/Components/shared/AttachmentList.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
-import MultiSelectChips from '@/Components/shared/MultiSelectChips.vue'
-import type { MultiSelectOption, SelectOption } from '@/types'
+import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
+import RichContent from '@/Components/shared/RichContent.vue'
+import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
+import TagPicker from '@/Components/shared/TagPicker.vue'
+import CustomFieldForm from '@/Components/shared/CustomFieldForm.vue'
+import type { CategoryOption, CustomFieldDefinition, CustomFieldValues, MultiSelectOption, ProjectOption, SelectOption, TagOption, TrackerOption } from '@/types'
 
 type Attachment = { id: string; filename: string; size: number; visibility?: string; url: string }
 type Person = { id: string; name: string; side?: string }
@@ -29,6 +32,14 @@ type TicketDetail = {
   status: string
   priority: string
   company: string
+  project?: string
+  project_id?: string
+  tracker?: string
+  tracker_id?: string
+  category?: string
+  category_id?: string
+  tags: TagOption[]
+  custom_fields: { id: string; name: string; type: string; value: unknown }[]
   assignee?: string
   assignee_id?: string
   requester?: string
@@ -47,11 +58,21 @@ const props = defineProps<{
   agents: MultiSelectOption[]
   departments: MultiSelectOption[]
   providerUsers: MultiSelectOption[]
+  projects: ProjectOption[]
+  trackers: TrackerOption[]
+  categories: CategoryOption[]
+  tags: TagOption[]
+  customFields: CustomFieldDefinition[]
 }>()
 
 const editForm = useForm({
   subject: props.ticket.subject,
   priority: props.ticket.priority,
+  project_id: props.ticket.project_id ?? '',
+  tracker_id: props.ticket.tracker_id ?? '',
+  category_id: props.ticket.category_id ?? '',
+  tag_names: props.ticket.tags.map((tag) => tag.name),
+  custom_fields: Object.fromEntries(props.ticket.custom_fields.map((field) => [field.id, field.value])) as CustomFieldValues,
 })
 
 const statusForm = useForm({ status: props.transitions[0]?.value ?? props.ticket.status })
@@ -66,6 +87,14 @@ const attachmentForm = useForm({ visibility: 'public', attachments: [] as File[]
 
 const watcherOptions = computed(() => props.providerUsers.filter((user) => !props.ticket.watchers.some((watcher) => watcher.id === user.id)))
 const targetErrors = computed(() => targetForm.errors.target_department_ids || targetForm.errors.target_user_ids || (targetForm.errors as Record<string, string | undefined>).targets)
+const filteredCategories = computed(() => props.categories.filter((category) => category.project_id === editForm.project_id && category.status !== 'disabled'))
+const selectedCustomFields = computed(() => props.customFields.filter((field) => field.tracker_id === editForm.tracker_id && field.status !== 'disabled'))
+
+watch(() => editForm.project_id, () => {
+  if (!filteredCategories.value.some((category) => category.id === editForm.category_id)) {
+    editForm.category_id = ''
+  }
+})
 
 const updateTicket = () => editForm.patch(route('admin.tickets.update', props.ticket.id), { preserveScroll: true })
 const changeStatus = () => statusForm.patch(route('admin.tickets.status', props.ticket.id), { preserveScroll: true })
@@ -122,7 +151,7 @@ const uploadAttachments = () => {
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <CardTitle class="text-xl">{{ ticket.subject }}</CardTitle>
-                <p class="mt-1 text-sm text-muted-foreground">{{ ticket.company }} · {{ ticket.requester || 'No requester' }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{{ ticket.company }} · {{ ticket.project || 'General' }} · {{ ticket.requester || 'No requester' }}</p>
               </div>
               <div class="flex gap-2">
                 <Badge tone="blue">{{ ticket.status }}</Badge>
@@ -131,7 +160,12 @@ const uploadAttachments = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <p class="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{{ ticket.description }}</p>
+            <div class="mb-3 flex flex-wrap gap-2">
+              <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
+              <Badge v-if="ticket.category" tone="neutral">{{ ticket.category }}</Badge>
+              <Badge v-for="tag in ticket.tags" :key="tag.name" tone="neutral">{{ tag.name }}</Badge>
+            </div>
+            <RichContent :html="ticket.description" />
             <AttachmentList :attachments="ticket.attachments" />
           </CardContent>
         </Card>
@@ -147,14 +181,14 @@ const uploadAttachments = () => {
                   <p class="text-sm font-medium">{{ comment.author || 'System' }}</p>
                   <Badge :tone="comment.visibility === 'internal' ? 'amber' : 'green'">{{ comment.visibility }}</Badge>
                 </div>
-                <p class="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{{ comment.body }}</p>
+                <RichContent class="mt-2" :html="comment.body" />
                 <AttachmentList :attachments="comment.attachments" />
               </div>
             </div>
 
             <form class="mt-5 space-y-3" @submit.prevent="addComment">
               <Label>Reply</Label>
-              <Textarea v-model="commentForm.body" required />
+              <RichTextEditor v-model="commentForm.body" placeholder="Write a reply" />
               <FieldError :message="commentForm.errors.body" />
               <div class="grid gap-3 md:grid-cols-[180px_1fr]">
                 <Select v-model="commentForm.visibility">
@@ -195,11 +229,44 @@ const uploadAttachments = () => {
                 <Input v-model="editForm.subject" class="mt-1" />
               </div>
               <div>
+                <Label>Project</Label>
+                <Select v-model="editForm.project_id" class="mt-1">
+                  <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
+                </Select>
+                <FieldError :message="editForm.errors.project_id" />
+              </div>
+              <div>
+                <Label>Tracker</Label>
+                <Select v-model="editForm.tracker_id" class="mt-1">
+                  <option v-for="tracker in trackers" :key="tracker.id" :value="tracker.id">{{ tracker.name }}</option>
+                </Select>
+                <FieldError :message="editForm.errors.tracker_id" />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Select v-model="editForm.category_id" class="mt-1">
+                  <option value="">No category</option>
+                  <option v-for="category in filteredCategories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                </Select>
+              </div>
+              <div>
                 <Label>Priority</Label>
                 <Select v-model="editForm.priority" class="mt-1">
                   <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
                 </Select>
               </div>
+              <div>
+                <Label>Tags</Label>
+                <TagPicker v-model="editForm.tag_names" class="mt-1" :options="tags" />
+              </div>
+              <CustomFieldForm
+                v-model="editForm.custom_fields"
+                :fields="selectedCustomFields"
+                :projects="projects"
+                :categories="filteredCategories"
+                :users="providerUsers"
+                :errors="editForm.errors"
+              />
               <Button type="submit" variant="secondary" class="w-full">Save details</Button>
             </form>
           </CardContent>
@@ -236,11 +303,11 @@ const uploadAttachments = () => {
             <form class="space-y-3" @submit.prevent="updateTargets">
               <div>
                 <Label>Departments</Label>
-                <MultiSelectChips v-model="targetForm.target_department_ids" class="mt-1" :options="departments" placeholder="Add department" />
+                <MultiSelectCombobox v-model="targetForm.target_department_ids" class="mt-1" :options="departments" placeholder="Select departments" />
               </div>
               <div>
                 <Label>Provider users</Label>
-                <MultiSelectChips v-model="targetForm.target_user_ids" class="mt-1" :options="providerUsers" placeholder="Add provider user" />
+                <MultiSelectCombobox v-model="targetForm.target_user_ids" class="mt-1" :options="providerUsers" placeholder="Select provider users" />
               </div>
               <FieldError :message="targetErrors" />
               <Button type="submit" variant="secondary" class="w-full">Save targets</Button>

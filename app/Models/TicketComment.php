@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Enums\TicketVisibility;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasPublicId;
+use App\Services\Content\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +35,13 @@ class TicketComment extends Model
             'visibility' => TicketVisibility::class,
             'edited_at' => 'datetime',
         ];
+    }
+
+    protected function body(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): string => app(HtmlSanitizer::class)->sanitize($value),
+        );
     }
 
     public function ticket(): BelongsTo

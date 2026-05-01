@@ -18,8 +18,14 @@ class StoreTicketRequest extends FormRequest
     {
         return [
             'subject' => ['required', 'string', 'max:255'],
+            'project_id' => ['sometimes', 'nullable', 'exists:support_projects,public_id'],
+            'tracker_id' => ['sometimes', 'nullable', 'exists:ticket_trackers,public_id'],
+            'category_id' => ['sometimes', 'nullable', 'exists:ticket_categories,public_id'],
             'description' => ['required', 'string', 'max:20000'],
             'priority' => ['sometimes', Rule::in(array_map(fn (TicketPriority $priority) => $priority->value, TicketPriority::cases()))],
+            'tag_names' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'tag_names.*' => ['string', 'max:40'],
+            'custom_fields' => ['sometimes', 'nullable', 'array'],
             'target_department_ids' => ['nullable', 'array'],
             'target_department_ids.*' => ['string', 'exists:support_departments,public_id'],
             'target_user_ids' => ['nullable', 'array'],

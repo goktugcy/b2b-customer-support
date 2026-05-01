@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CompanyStatus;
+use App\Enums\CompanyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCompanyRequest;
 use App\Models\Company;
+use App\Services\Tickets\IssueTrackingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -34,12 +36,16 @@ class CompanyController extends Controller
         ]);
     }
 
-    public function store(StoreCompanyRequest $request): RedirectResponse
+    public function store(StoreCompanyRequest $request, IssueTrackingService $issueTracking): RedirectResponse
     {
         $company = Company::create($request->validated() + [
             'status' => CompanyStatus::Active,
             'settings' => [],
         ]);
+
+        if ($company->type === CompanyType::Client) {
+            $issueTracking->defaultProjectForCompany($company);
+        }
 
         return redirect()->route('admin.companies.show', $company)->with('success', 'Company created.');
     }

@@ -4,7 +4,6 @@ import { Link, router, useForm } from '@inertiajs/vue3'
 import { ArrowLeft, X } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
-import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Select from '@/Components/ui/select/Select.vue'
@@ -15,6 +14,8 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import AttachmentList from '@/Components/shared/AttachmentList.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
+import RichContent from '@/Components/shared/RichContent.vue'
+import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
 import type { SelectOption } from '@/types'
 
 type Attachment = { id: string; filename: string; size: number; url: string }
@@ -26,6 +27,11 @@ type Ticket = {
   description: string
   status: string
   priority: string
+  project?: string
+  tracker?: string
+  category?: string
+  tags: { id: string; name: string; color?: string }[]
+  custom_fields: { id: string; name: string; type: string; value: unknown }[]
   assignee?: string
   targets: { departments: Person[]; users: Person[] }
   watchers: Person[]
@@ -95,7 +101,12 @@ const uploadAttachments = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <p class="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{{ ticket.description }}</p>
+            <div class="mb-3 flex flex-wrap gap-2">
+              <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
+              <Badge v-if="ticket.category" tone="neutral">{{ ticket.category }}</Badge>
+              <Badge v-for="tag in ticket.tags" :key="tag.id" tone="neutral">{{ tag.name }}</Badge>
+            </div>
+            <RichContent :html="ticket.description" />
             <AttachmentList :attachments="ticket.attachments" />
           </CardContent>
         </Card>
@@ -106,13 +117,13 @@ const uploadAttachments = () => {
             <div class="space-y-3">
               <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border bg-background p-3">
                 <p class="text-sm font-medium">{{ comment.author || 'Support' }}</p>
-                <p class="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{{ comment.body }}</p>
+                <RichContent class="mt-2" :html="comment.body" />
                 <AttachmentList :attachments="comment.attachments" />
               </div>
             </div>
             <form class="mt-5 space-y-3" @submit.prevent="submit">
               <Label>Reply</Label>
-              <Textarea v-model="form.body" required />
+              <RichTextEditor v-model="form.body" placeholder="Write a reply" />
               <FieldError :message="form.errors.body" />
               <FilePicker v-model="form.attachments" />
               <Button type="submit" :disabled="form.processing">Add reply</Button>
@@ -127,8 +138,15 @@ const uploadAttachments = () => {
           <CardContent>
             <dl class="space-y-3 text-sm">
               <div><dt class="text-muted-foreground">Assignee</dt><dd class="font-medium">{{ ticket.assignee || 'Unassigned' }}</dd></div>
+              <div><dt class="text-muted-foreground">Project</dt><dd class="font-medium">{{ ticket.project || '-' }}</dd></div>
+              <div><dt class="text-muted-foreground">Tracker</dt><dd class="font-medium">{{ ticket.tracker || '-' }}</dd></div>
+              <div v-if="ticket.category"><dt class="text-muted-foreground">Category</dt><dd class="font-medium">{{ ticket.category }}</dd></div>
               <div><dt class="text-muted-foreground">Status</dt><dd class="font-medium">{{ ticket.status }}</dd></div>
               <div><dt class="text-muted-foreground">Priority</dt><dd class="font-medium">{{ ticket.priority }}</dd></div>
+              <div v-for="field in ticket.custom_fields" :key="field.id">
+                <dt class="text-muted-foreground">{{ field.name }}</dt>
+                <dd class="font-medium">{{ Array.isArray(field.value) ? field.value.join(', ') : field.value || '-' }}</dd>
+              </div>
             </dl>
           </CardContent>
         </Card>

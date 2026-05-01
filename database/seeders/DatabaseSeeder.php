@@ -7,6 +7,8 @@ use App\Enums\RoleName;
 use App\Enums\SupportDepartmentStatus;
 use App\Models\Company;
 use App\Models\SupportDepartment;
+use App\Models\SupportProject;
+use App\Models\TicketTracker;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -53,7 +55,7 @@ class DatabaseSeeder extends Seeder
             'status' => SupportDepartmentStatus::Active,
         ]);
 
-        Company::firstOrCreate([
+        $client = Company::firstOrCreate([
             'slug' => 'acme-corp',
         ], [
             'type' => CompanyType::Client,
@@ -61,6 +63,27 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
             'timezone' => 'UTC',
             'settings' => [],
+        ]);
+
+        TicketTracker::firstOrCreate([
+            'slug' => 'support',
+        ], [
+            'name' => 'Support',
+            'description' => 'Default support issue tracker.',
+            'color' => '#2563eb',
+            'status' => 'active',
+            'is_default' => true,
+            'sort_order' => 0,
+        ]);
+
+        SupportProject::firstOrCreate([
+            'company_id' => $client->id,
+            'slug' => 'general',
+        ], [
+            'name' => 'General',
+            'description' => 'Default support project.',
+            'status' => 'active',
+            'is_default' => true,
         ]);
     }
 }

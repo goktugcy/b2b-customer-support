@@ -8,7 +8,9 @@ use App\Enums\TicketSource;
 use App\Enums\TicketStatus;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasPublicId;
+use App\Services\Content\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +25,9 @@ class Ticket extends Model
     protected $fillable = [
         'public_id',
         'company_id',
+        'support_project_id',
+        'ticket_tracker_id',
+        'ticket_category_id',
         'created_by_user_id',
         'requester_user_id',
         'api_client_id',
@@ -55,6 +60,13 @@ class Ticket extends Model
         ];
     }
 
+    protected function description(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): string => app(HtmlSanitizer::class)->sanitize($value),
+        );
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
@@ -73,6 +85,21 @@ class Ticket extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    public function supportProject(): BelongsTo
+    {
+        return $this->belongsTo(SupportProject::class);
+    }
+
+    public function tracker(): BelongsTo
+    {
+        return $this->belongsTo(TicketTracker::class, 'ticket_tracker_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(TicketCategory::class, 'ticket_category_id');
     }
 
     public function comments(): HasMany
@@ -97,6 +124,16 @@ class Ticket extends Model
         return $this->belongsToMany(User::class, 'ticket_target_users')
             ->withPivot('added_by_user_id')
             ->withTimestamps();
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketTag::class, 'ticket_tag')->withTimestamps();
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(TicketCustomFieldValue::class);
     }
 
     public function watchers(): HasMany

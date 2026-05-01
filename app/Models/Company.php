@@ -44,6 +44,11 @@ class Company extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    public function supportProjects(): HasMany
+    {
+        return $this->hasMany(SupportProject::class);
+    }
+
     public function invitations(): HasMany
     {
         return $this->hasMany(Invitation::class);

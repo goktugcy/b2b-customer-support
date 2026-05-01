@@ -28,8 +28,12 @@ class TicketController extends Controller
         return TicketResource::collection(
             Ticket::query()
                 ->visibleTo($request->user())
-                ->with(['company', 'assignee'])
+                ->with(['company', 'assignee', 'supportProject', 'tracker', 'category', 'tags', 'customFieldValues.customField.options'])
                 ->when($request->query('status'), fn ($query, string $status) => $query->where('status', $status))
+                ->when($request->query('project_id'), fn ($query, string $projectId) => $query->whereHas('supportProject', fn ($project) => $project->where('public_id', $projectId)))
+                ->when($request->query('tracker_id'), fn ($query, string $trackerId) => $query->whereHas('tracker', fn ($tracker) => $tracker->where('public_id', $trackerId)))
+                ->when($request->query('category_id'), fn ($query, string $categoryId) => $query->whereHas('category', fn ($category) => $category->where('public_id', $categoryId)))
+                ->when($request->query('tag_id'), fn ($query, string $tagId) => $query->whereHas('tags', fn ($tag) => $tag->where('public_id', $tagId)))
                 ->latest()
                 ->paginate((int) min($request->integer('per_page', 25), 100))
         );
@@ -45,14 +49,19 @@ class TicketController extends Controller
 
         $ticket = $tickets->create([
             'company_id' => $client->company_id,
+            'project_id' => $request->validated('project_id'),
+            'tracker_id' => $request->validated('tracker_id'),
+            'category_id' => $request->validated('category_id'),
             'subject' => $request->validated('subject'),
             'description' => $request->validated('description'),
             'priority' => $request->validated('priority') ?? null,
+            'tag_names' => $request->validated('tag_names', []),
+            'custom_fields' => $request->validated('custom_fields', []),
             'target_department_ids' => $request->validated('target_department_ids', []),
             'target_user_ids' => $request->validated('target_user_ids', []),
         ], $client, TicketSource::Api, $request);
 
-        $response = (new TicketResource($ticket->load(['company', 'assignee', 'targetDepartments', 'targetUsers'])))
+        $response = (new TicketResource($ticket->load(['company', 'assignee', 'supportProject', 'tracker.customFields.options', 'category', 'tags', 'customFieldValues.customField.options', 'targetDepartments', 'targetUsers'])))
             ->response()
             ->setStatusCode(201);
 
@@ -71,6 +80,11 @@ class TicketController extends Controller
         return new TicketResource($ticket->load([
             'company',
             'assignee',
+            'supportProject',
+            'tracker.customFields.options',
+            'category',
+            'tags',
+            'customFieldValues.customField.options',
             'targetDepartments',
             'targetUsers',
             'comments' => fn ($query) => $query->visibleTo($request->user())->with(['user', 'apiClient'])->oldest(),

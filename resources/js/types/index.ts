@@ -21,6 +21,61 @@ export type MultiSelectOption = {
   department_ids?: string[]
 }
 
+export type ProjectOption = {
+  id: string
+  name: string
+  company_id?: string | null
+  company?: string | null
+  status?: string
+  is_default?: boolean
+}
+
+export type TrackerOption = {
+  id: string
+  name: string
+  color?: string
+  status?: string
+  is_default?: boolean
+}
+
+export type CategoryOption = {
+  id: string
+  name: string
+  project_id?: string | null
+  project?: string | null
+  company_id?: string | null
+  status?: string
+}
+
+export type TagOption = {
+  id?: string
+  name: string
+  color?: string
+}
+
+export type CustomFieldOption = {
+  value: string
+  label: string
+}
+
+export type CustomFieldValue = string | number | boolean | string[] | null
+export type CustomFieldValues = Record<string, CustomFieldValue>
+
+export type CustomFieldDefinition = {
+  id: string
+  tracker_id?: string
+  name: string
+  slug: string
+  type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'single_select' | 'multi_select' | 'user' | 'project' | 'category'
+  is_required?: boolean
+  required?: boolean
+  validation_regex?: string | null
+  status?: string
+  sort_order?: number
+  options: CustomFieldOption[]
+  value?: unknown
+}
+
 export type Flash = {
   success?: string | null
   error?: string | null

@@ -13,7 +13,9 @@ use App\Http\Requests\Portal\StoreTicketRequest;
 use App\Http\Requests\Portal\StoreTicketWatcherRequest;
 use App\Models\SupportDepartment;
 use App\Models\Ticket;
+use App\Models\TicketTag;
 use App\Models\User;
+use App\Services\Tickets\IssueTrackingService;
 use App\Services\Tickets\TicketAttachmentService;
 use App\Services\Tickets\TicketCommentService;
 use App\Services\Tickets\TicketCreationService;
@@ -26,15 +28,18 @@ use Inertia\Response;
 
 class TicketController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, IssueTrackingService $issueTracking): Response
     {
         $this->authorize('viewAny', Ticket::class);
 
         return Inertia::render('Portal/Tickets/Index', [
             'tickets' => Ticket::query()
                 ->visibleTo($request->user())
-                ->with('assignee')
+                ->with(['assignee', 'supportProject', 'tracker', 'category', 'tags'])
                 ->when($request->string('status')->isNotEmpty(), fn ($query) => $query->where('status', $request->string('status')))
+                ->when($request->string('project')->isNotEmpty(), fn ($query) => $query->whereHas('supportProject', fn ($project) => $project->where('public_id', $request->string('project'))))
+                ->when($request->string('tracker')->isNotEmpty(), fn ($query) => $query->whereHas('tracker', fn ($tracker) => $tracker->where('public_id', $request->string('tracker'))))
+                ->when($request->string('tag')->isNotEmpty(), fn ($query) => $query->whereHas('tags', fn ($tag) => $tag->where('public_id', $request->string('tag'))))
                 ->latest()
                 ->paginate(15)
                 ->withQueryString()
@@ -43,15 +48,21 @@ class TicketController extends Controller
                     'subject' => $ticket->subject,
                     'status' => $ticket->status->value,
                     'priority' => $ticket->priority->value,
+                    'project' => $ticket->supportProject?->name,
+                    'tracker' => $ticket->tracker?->name,
+                    'tags' => $ticket->tags->pluck('name')->values(),
                     'assignee' => $ticket->assignee?->name,
                     'created_at' => $ticket->created_at?->toISOString(),
                 ]),
-            'filters' => $request->only(['status']),
+            'filters' => $request->only(['status', 'project', 'tracker', 'tag']),
             'statuses' => array_map(fn (TicketStatus $status): array => ['value' => $status->value, 'label' => $status->label()], TicketStatus::cases()),
+            'projects' => $issueTracking->projectOptions($request->user()->company),
+            'trackers' => $issueTracking->trackerOptions(),
+            'tags' => $issueTracking->tagOptions(),
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request, IssueTrackingService $issueTracking): Response
     {
         $this->authorize('create', Ticket::class);
 
@@ -59,6 +70,11 @@ class TicketController extends Controller
             'priorities' => array_map(fn (TicketPriority $priority): array => ['value' => $priority->value, 'label' => $priority->label()], TicketPriority::cases()),
             'departments' => $this->providerDepartments(),
             'providerUsers' => $this->providerUsers(),
+            'projects' => $issueTracking->projectOptions($request->user()->company),
+            'trackers' => $issueTracking->trackerOptions(),
+            'categories' => $issueTracking->categoryOptions($request->user()->company),
+            'tags' => $issueTracking->tagOptions(),
+            'customFields' => $issueTracking->customFieldOptions(),
         ]);
     }
 
@@ -66,9 +82,14 @@ class TicketController extends Controller
     {
         $ticket = $tickets->create([
             'company_id' => $request->user()->company_id,
+            'project_id' => $request->validated('project_id'),
+            'tracker_id' => $request->validated('tracker_id'),
+            'category_id' => $request->validated('category_id'),
             'subject' => $request->validated('subject'),
             'description' => $request->validated('description'),
             'priority' => $request->validated('priority'),
+            'tag_names' => $request->validated('tag_names', []),
+            'custom_fields' => $request->validated('custom_fields', []),
             'target_department_ids' => $request->validated('target_department_ids', []),
             'target_user_ids' => $request->validated('target_user_ids', []),
             'attachments' => (array) $request->file('attachments', []),
@@ -83,6 +104,11 @@ class TicketController extends Controller
 
         $ticket->load([
             'assignee',
+            'supportProject',
+            'tracker.customFields.options',
+            'category',
+            'tags',
+            'customFieldValues.customField.options',
             'targetDepartments',
             'targetUsers',
             'watcherUsers',
@@ -101,6 +127,23 @@ class TicketController extends Controller
                 'description' => $ticket->description,
                 'status' => $ticket->status->value,
                 'priority' => $ticket->priority->value,
+                'project' => $ticket->supportProject?->name,
+                'tracker' => $ticket->tracker?->name,
+                'category' => $ticket->category?->name,
+                'tags' => $ticket->tags->map(fn (TicketTag $tag): array => [
+                    'id' => $tag->public_id,
+                    'name' => $tag->name,
+                    'color' => $tag->color,
+                ])->values(),
+                'custom_fields' => $ticket->customFieldValues
+                    ->map(fn ($value): array => [
+                        'id' => $value->customField?->public_id,
+                        'name' => $value->customField?->name,
+                        'type' => $value->customField?->type,
+                        'value' => $value->value['value'] ?? null,
+                    ])
+                    ->filter(fn (array $field): bool => $field['id'] !== null)
+                    ->values(),
                 'assignee' => $ticket->assignee?->name,
                 'created_at' => $ticket->created_at?->toISOString(),
                 'targets' => [

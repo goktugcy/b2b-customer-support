@@ -19,7 +19,7 @@ import TableHead from '@/Components/ui/table/TableHead.vue'
 import TableHeader from '@/Components/ui/table/TableHeader.vue'
 import TableRow from '@/Components/ui/table/TableRow.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
-import MultiSelectChips from '@/Components/shared/MultiSelectChips.vue'
+import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
 import type { MultiSelectOption } from '@/types'
 
 type Department = {
@@ -86,7 +86,7 @@ const disableDepartment = (department: Department) => {
                   <Textarea v-model="department.description" :rows="2" />
                 </TableCell>
                 <TableCell>
-                  <MultiSelectChips v-model="department.user_ids" :options="providerUsers" placeholder="Add member" />
+                  <MultiSelectCombobox v-model="department.user_ids" :options="providerUsers" placeholder="Add members" />
                 </TableCell>
                 <TableCell>
                   <Select v-model="department.status">
@@ -125,7 +125,7 @@ const disableDepartment = (department: Department) => {
             </div>
             <div>
               <Label>Members</Label>
-              <MultiSelectChips v-model="form.user_ids" class="mt-1" :options="providerUsers" placeholder="Add member" />
+              <MultiSelectCombobox v-model="form.user_ids" class="mt-1" :options="providerUsers" placeholder="Add members" />
               <FieldError :message="form.errors.user_ids" />
             </div>
             <Button type="submit" class="w-full" :disabled="form.processing">Create</Button>

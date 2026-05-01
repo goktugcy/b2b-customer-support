@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\TicketComment;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Content\HtmlSanitizer;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -21,6 +22,7 @@ class TicketCommentService
         private readonly TicketEventRecorder $events,
         private readonly TicketWorkflowService $workflow,
         private readonly TicketAttachmentService $attachments,
+        private readonly HtmlSanitizer $sanitizer,
     ) {}
 
     /**
@@ -49,7 +51,7 @@ class TicketCommentService
                 'user_id' => $actor instanceof User ? $actor->id : null,
                 'api_client_id' => $actor instanceof ApiClient ? $actor->id : null,
                 'visibility' => $visibility,
-                'body' => $body,
+                'body' => $this->sanitizer->sanitize($body),
             ]);
 
             $isCustomerSide = $actor instanceof ApiClient || ($actor instanceof User && $actor->isCustomerUser());

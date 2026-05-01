@@ -28,6 +28,7 @@ class RoleAndPermissionSeeder extends Seeder
         'tickets.close_own',
         'tickets.add_watcher',
         'tickets.manage_targets',
+        'issue_tracking.manage',
         'departments.manage',
         'api_tokens.manage',
         'webhooks.manage',
