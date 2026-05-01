@@ -10,6 +10,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RoleAndPermissionSeeder extends Seeder
 {
+    private const GUARD = 'web';
+
     public const PERMISSIONS = [
         'companies.manage',
         'users.manage',
@@ -33,12 +35,12 @@ class RoleAndPermissionSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         foreach (self::PERMISSIONS as $permission) {
-            Permission::findOrCreate($permission);
+            Permission::findOrCreate($permission, self::GUARD);
         }
 
-        Role::findOrCreate(RoleName::ProviderAdmin->value)->syncPermissions(self::PERMISSIONS);
+        Role::findOrCreate(RoleName::ProviderAdmin->value, self::GUARD)->syncPermissions(self::PERMISSIONS);
 
-        Role::findOrCreate(RoleName::Agent->value)->syncPermissions([
+        Role::findOrCreate(RoleName::Agent->value, self::GUARD)->syncPermissions([
             'tickets.view_any',
             'tickets.create',
             'tickets.update',
@@ -49,7 +51,7 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.manage_priority',
         ]);
 
-        Role::findOrCreate(RoleName::CustomerAdmin->value)->syncPermissions([
+        Role::findOrCreate(RoleName::CustomerAdmin->value, self::GUARD)->syncPermissions([
             'users.invite',
             'tickets.view_company',
             'tickets.create',
@@ -58,7 +60,7 @@ class RoleAndPermissionSeeder extends Seeder
             'webhooks.manage',
         ]);
 
-        Role::findOrCreate(RoleName::CustomerUser->value)->syncPermissions([
+        Role::findOrCreate(RoleName::CustomerUser->value, self::GUARD)->syncPermissions([
             'tickets.view_company',
             'tickets.create',
             'tickets.comment_public',

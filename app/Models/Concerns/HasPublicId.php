@@ -2,18 +2,23 @@
 
 namespace App\Models\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 trait HasPublicId
 {
-    protected static function bootHasPublicId(): void
+    public function initializeHasPublicId(): void
     {
-        static::creating(function (Model $model): void {
-            if (! $model->getAttribute('public_id')) {
-                $model->setAttribute('public_id', (string) Str::ulid());
-            }
-        });
+        $this->usesUniqueIds = true;
+    }
+
+    public function uniqueIds(): array
+    {
+        return ['public_id'];
+    }
+
+    public function newUniqueId(): string
+    {
+        return (string) Str::ulid();
     }
 
     public function getRouteKeyName(): string
