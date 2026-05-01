@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class TicketCommentService
@@ -19,9 +20,13 @@ class TicketCommentService
         private readonly AuditLogger $audit,
         private readonly TicketEventRecorder $events,
         private readonly TicketWorkflowService $workflow,
+        private readonly TicketAttachmentService $attachments,
     ) {}
 
-    public function create(Ticket $ticket, User|ApiClient $actor, string $body, TicketVisibility $visibility, ?Request $request = null): TicketComment
+    /**
+     * @param  list<UploadedFile>  $files
+     */
+    public function create(Ticket $ticket, User|ApiClient $actor, string $body, TicketVisibility $visibility, ?Request $request = null, array $files = []): TicketComment
     {
         if ($actor instanceof ApiClient && $visibility !== TicketVisibility::Public) {
             throw new AuthorizationException('API clients can only create public comments.');
@@ -37,7 +42,7 @@ class TicketCommentService
             }
         }
 
-        return DB::transaction(function () use ($ticket, $actor, $body, $visibility, $request): TicketComment {
+        return DB::transaction(function () use ($ticket, $actor, $body, $visibility, $request, $files): TicketComment {
             $comment = TicketComment::create([
                 'company_id' => $ticket->company_id,
                 'ticket_id' => $ticket->id,
@@ -58,9 +63,11 @@ class TicketCommentService
                 $this->workflow->handleCustomerReply($ticket->refresh(), $actor, $request);
             }
 
+            $eventType = $visibility === TicketVisibility::Internal ? 'ticket.internal_note.created' : 'ticket.comment.created';
+
             $this->events->record(
                 ticket: $ticket->refresh(),
-                eventType: $visibility === TicketVisibility::Internal ? 'ticket.internal_note.created' : 'ticket.comment.created',
+                eventType: $eventType,
                 actor: $actor,
                 newValues: [
                     'comment_id' => $comment->public_id,
@@ -69,12 +76,18 @@ class TicketCommentService
                 request: $request,
             );
 
-            $this->audit->log('ticket.comment.created', $ticket, $actor, after: [
+            $this->audit->log($eventType, $ticket, $actor, after: [
                 'comment_id' => $comment->public_id,
                 'visibility' => $visibility->value,
             ], request: $request);
 
-            SendTicketNotification::dispatch($ticket, 'ticket.comment.created')->afterCommit()->onQueue('notifications');
+            foreach ($files as $file) {
+                $this->attachments->store($ticket, $file, $actor, $visibility, $request, $comment);
+            }
+
+            if ($visibility === TicketVisibility::Public) {
+                SendTicketNotification::dispatch($ticket, 'ticket.comment.created')->afterCommit()->onQueue('notifications');
+            }
 
             return $comment;
         });

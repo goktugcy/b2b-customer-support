@@ -7,6 +7,7 @@ use App\Jobs\ProcessAttachment;
 use App\Models\ApiClient;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
+use App\Models\TicketComment;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Http\Request;
@@ -27,8 +28,9 @@ class TicketAttachmentService
         User|ApiClient $actor,
         TicketVisibility $visibility = TicketVisibility::Public,
         ?Request $request = null,
+        ?TicketComment $comment = null,
     ): TicketAttachment {
-        return DB::transaction(function () use ($ticket, $file, $actor, $visibility, $request): TicketAttachment {
+        return DB::transaction(function () use ($ticket, $file, $actor, $visibility, $request, $comment): TicketAttachment {
             $directory = 'tickets/'.$ticket->company->public_id.'/'.$ticket->public_id;
             $path = $file->store($directory, 'local');
             $absolutePath = Storage::disk('local')->path($path);
@@ -36,6 +38,7 @@ class TicketAttachmentService
             $attachment = TicketAttachment::create([
                 'company_id' => $ticket->company_id,
                 'ticket_id' => $ticket->id,
+                'comment_id' => $comment?->id,
                 'uploaded_by_user_id' => $actor instanceof User ? $actor->id : null,
                 'api_client_id' => $actor instanceof ApiClient ? $actor->id : null,
                 'disk' => 'local',
@@ -53,7 +56,8 @@ class TicketAttachmentService
                 eventType: 'ticket.attachment.created',
                 actor: $actor,
                 newValues: [
-                    'attachment_id' => $attachment->id,
+                    'attachment_id' => $attachment->public_id,
+                    'comment_id' => $comment?->public_id,
                     'filename' => $attachment->original_name,
                     'visibility' => $visibility->value,
                 ],
@@ -61,7 +65,8 @@ class TicketAttachmentService
             );
 
             $this->audit->log('ticket.attachment.created', $ticket, $actor, after: [
-                'attachment_id' => $attachment->id,
+                'attachment_id' => $attachment->public_id,
+                'comment_id' => $comment?->public_id,
                 'filename' => $attachment->original_name,
             ], request: $request);
 

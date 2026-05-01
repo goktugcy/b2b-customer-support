@@ -21,6 +21,16 @@ class TicketResource extends JsonResource
                 'id' => $this->assignee->public_id,
                 'name' => $this->assignee->name,
             ] : null,
+            'targets' => [
+                'departments' => $this->whenLoaded('targetDepartments', fn () => $this->targetDepartments->map(fn ($department): array => [
+                    'id' => $department->public_id,
+                    'name' => $department->name,
+                ])->values()),
+                'users' => $this->whenLoaded('targetUsers', fn () => $this->targetUsers->map(fn ($user): array => [
+                    'id' => $user->public_id,
+                    'name' => $user->name,
+                ])->values()),
+            ],
             'comments' => TicketCommentResource::collection($this->whenLoaded('comments')),
             'attachments' => TicketAttachmentResource::collection($this->whenLoaded('attachments')),
             'created_at' => $this->created_at?->toISOString(),

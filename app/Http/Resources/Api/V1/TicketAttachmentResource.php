@@ -10,6 +10,7 @@ class TicketAttachmentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->public_id,
             'filename' => $this->original_name,
             'mime_type' => $this->mime_type,
             'size' => $this->size,

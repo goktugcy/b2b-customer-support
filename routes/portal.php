@@ -15,6 +15,10 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
         Route::get('dashboard', fn () => Inertia::render('Portal/Dashboard'))->name('home');
 
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
+        Route::patch('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
+        Route::post('tickets/{ticket}/watchers', [TicketController::class, 'addWatcher'])->name('tickets.watchers.store');
+        Route::delete('tickets/{ticket}/watchers/{user}', [TicketController::class, 'removeWatcher'])->name('tickets.watchers.destroy');
+        Route::post('tickets/{ticket}/attachments', [TicketController::class, 'attachment'])->name('tickets.attachments.store');
         Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment'])->name('tickets.comments.store');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');

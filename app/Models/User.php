@@ -8,6 +8,7 @@ use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasPublicId;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -67,6 +68,19 @@ class User extends Authenticatable
     public function invitations(): HasMany
     {
         return $this->hasMany(Invitation::class, 'invited_by_user_id');
+    }
+
+    public function supportDepartments(): BelongsToMany
+    {
+        return $this->belongsToMany(SupportDepartment::class, 'support_department_user')
+            ->withTimestamps();
+    }
+
+    public function watchedTickets(): BelongsToMany
+    {
+        return $this->belongsToMany(Ticket::class, 'ticket_watchers')
+            ->withPivot(['side', 'added_by_user_id', 'notified_at'])
+            ->withTimestamps();
     }
 
     public function isProviderUser(): bool

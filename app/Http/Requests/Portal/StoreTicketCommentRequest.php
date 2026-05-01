@@ -15,6 +15,8 @@ class StoreTicketCommentRequest extends FormRequest
     {
         return [
             'body' => ['required', 'string', 'max:20000'],
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => ['file', 'max:20480'],
         ];
     }
 }

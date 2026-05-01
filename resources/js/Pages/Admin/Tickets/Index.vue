@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
@@ -7,10 +8,13 @@ import Input from '@/Components/ui/input/Input.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Select from '@/Components/ui/select/Select.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
-import type { Paginated, SelectOption } from '@/types'
+import FilePicker from '@/Components/shared/FilePicker.vue'
+import MultiSelectChips from '@/Components/shared/MultiSelectChips.vue'
+import type { MultiSelectOption, Paginated, SelectOption } from '@/types'
 
 type TicketRow = {
   id: string
@@ -26,6 +30,8 @@ const props = defineProps<{
   tickets: Paginated<TicketRow>
   filters: { status?: string; priority?: string; company?: string }
   companies: { public_id: string; name: string }[]
+  departments: MultiSelectOption[]
+  providerUsers: MultiSelectOption[]
   statuses: SelectOption[]
   priorities: SelectOption[]
 }>()
@@ -42,7 +48,12 @@ const form = useForm({
   description: '',
   priority: 'normal',
   assigned_to_user_id: '',
+  target_department_ids: [] as string[],
+  target_user_ids: [] as string[],
+  attachments: [] as File[],
 })
+
+const targetErrors = computed(() => form.errors.target_department_ids || form.errors.target_user_ids || (form.errors as Record<string, string | undefined>).targets)
 
 const applyFilters = () => {
   router.get(route('admin.tickets.index'), filter.data(), { preserveState: true, replace: true })
@@ -51,7 +62,13 @@ const applyFilters = () => {
 const createTicket = () => {
   form.post(route('admin.tickets.store'), {
     preserveScroll: true,
-    onSuccess: () => form.reset('subject', 'description', 'assigned_to_user_id'),
+    forceFormData: true,
+    onSuccess: () => {
+      form.reset('subject', 'description', 'assigned_to_user_id')
+      form.target_department_ids = []
+      form.target_user_ids = []
+      form.attachments = []
+    },
   })
 }
 
@@ -64,18 +81,18 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
       <div class="space-y-4">
         <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
           <div class="grid gap-3 md:grid-cols-4">
-            <select v-model="filter.status" class="h-10 rounded-md border-slate-300 text-sm" @change="applyFilters">
+            <Select v-model="filter.status" @change="applyFilters">
               <option value="">All statuses</option>
               <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
-            </select>
-            <select v-model="filter.priority" class="h-10 rounded-md border-slate-300 text-sm" @change="applyFilters">
+            </Select>
+            <Select v-model="filter.priority" @change="applyFilters">
               <option value="">All priorities</option>
               <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
-            </select>
-            <select v-model="filter.company" class="h-10 rounded-md border-slate-300 text-sm md:col-span-2" @change="applyFilters">
+            </Select>
+            <Select v-model="filter.company" class="md:col-span-2" @change="applyFilters">
               <option value="">All companies</option>
               <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -119,9 +136,9 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
         <div class="space-y-4">
           <div>
             <Label>Company</Label>
-            <select v-model="form.company_id" class="mt-1 h-10 w-full rounded-md border-slate-300 text-sm">
+            <Select v-model="form.company_id" class="mt-1">
               <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
-            </select>
+            </Select>
             <FieldError :message="form.errors.company_id" />
           </div>
           <div>
@@ -136,9 +153,31 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
           </div>
           <div>
             <Label>Priority</Label>
-            <select v-model="form.priority" class="mt-1 h-10 w-full rounded-md border-slate-300 text-sm">
+            <Select v-model="form.priority" class="mt-1">
               <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
-            </select>
+            </Select>
+          </div>
+          <div>
+            <Label>Target departments</Label>
+            <MultiSelectChips v-model="form.target_department_ids" class="mt-1" :options="departments" placeholder="Add department" />
+            <FieldError :message="targetErrors" />
+          </div>
+          <div>
+            <Label>Target users</Label>
+            <MultiSelectChips v-model="form.target_user_ids" class="mt-1" :options="providerUsers" placeholder="Add provider user" />
+            <FieldError :message="form.errors.target_user_ids" />
+          </div>
+          <div>
+            <Label>Assignee</Label>
+            <Select v-model="form.assigned_to_user_id" class="mt-1">
+              <option value="">Unassigned</option>
+              <option v-for="user in providerUsers" :key="user.id" :value="user.id">{{ user.name }}</option>
+            </Select>
+          </div>
+          <div>
+            <Label>Attachments</Label>
+            <FilePicker v-model="form.attachments" class="mt-1" />
+            <FieldError :message="form.errors.attachments" />
           </div>
           <Button type="submit" class="w-full" :disabled="form.processing">Create</Button>
         </div>

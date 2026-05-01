@@ -54,6 +54,33 @@ class TicketPolicy
         return $user->isProviderUser() && $user->can('tickets.change_status');
     }
 
+    public function closeOwn(User $user, Ticket $ticket): bool
+    {
+        return $user->isCustomerUser()
+            && $user->company_id === $ticket->company_id
+            && in_array($user->id, [$ticket->created_by_user_id, $ticket->requester_user_id], true)
+            && $user->can('tickets.close_own');
+    }
+
+    public function addWatcher(User $user, Ticket $ticket): bool
+    {
+        if (! $user->can('tickets.add_watcher')) {
+            return false;
+        }
+
+        return $user->isProviderUser() || $user->company_id === $ticket->company_id;
+    }
+
+    public function manageTargets(User $user, Ticket $ticket): bool
+    {
+        return $user->isProviderUser() && $user->can('tickets.manage_targets');
+    }
+
+    public function attach(User|ApiClient $actor, Ticket $ticket): bool
+    {
+        return $this->comment($actor, $ticket);
+    }
+
     public function comment(User|ApiClient $actor, Ticket $ticket): bool
     {
         if ($actor instanceof ApiClient) {

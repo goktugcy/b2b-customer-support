@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TicketComment extends Model
@@ -47,6 +48,11 @@ class TicketComment extends Model
     public function apiClient(): BelongsTo
     {
         return $this->belongsTo(ApiClient::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class, 'comment_id');
     }
 
     public function scopeVisibleTo(Builder $query, User|ApiClient $actor): Builder

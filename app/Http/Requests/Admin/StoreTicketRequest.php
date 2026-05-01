@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Enums\TicketPriority;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreTicketRequest extends FormRequest
 {
@@ -21,6 +22,24 @@ class StoreTicketRequest extends FormRequest
             'description' => ['required', 'string', 'max:20000'],
             'priority' => ['required', Rule::in(array_map(fn (TicketPriority $priority) => $priority->value, TicketPriority::cases()))],
             'assigned_to_user_id' => ['nullable', 'exists:users,public_id'],
+            'target_department_ids' => ['nullable', 'array'],
+            'target_department_ids.*' => ['string', 'exists:support_departments,public_id'],
+            'target_user_ids' => ['nullable', 'array'],
+            'target_user_ids.*' => ['string', 'exists:users,public_id'],
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => ['file', 'max:20480'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $departmentIds = collect($this->input('target_department_ids', []))->filter();
+            $userIds = collect($this->input('target_user_ids', []))->filter();
+
+            if ($departmentIds->isEmpty() && $userIds->isEmpty()) {
+                $validator->errors()->add('targets', 'Select at least one target department or provider user.');
+            }
+        });
     }
 }

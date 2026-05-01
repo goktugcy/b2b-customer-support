@@ -25,6 +25,10 @@ class RoleAndPermissionSeeder extends Seeder
         'tickets.comment_public',
         'tickets.comment_internal',
         'tickets.manage_priority',
+        'tickets.close_own',
+        'tickets.add_watcher',
+        'tickets.manage_targets',
+        'departments.manage',
         'api_tokens.manage',
         'webhooks.manage',
         'audit.view',
@@ -38,6 +42,8 @@ class RoleAndPermissionSeeder extends Seeder
             Permission::findOrCreate($permission, self::GUARD);
         }
 
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         Role::findOrCreate(RoleName::ProviderAdmin->value, self::GUARD)->syncPermissions(self::PERMISSIONS);
 
         Role::findOrCreate(RoleName::Agent->value, self::GUARD)->syncPermissions([
@@ -49,6 +55,8 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.comment_public',
             'tickets.comment_internal',
             'tickets.manage_priority',
+            'tickets.add_watcher',
+            'tickets.manage_targets',
         ]);
 
         Role::findOrCreate(RoleName::CustomerAdmin->value, self::GUARD)->syncPermissions([
@@ -56,6 +64,8 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.view_company',
             'tickets.create',
             'tickets.comment_public',
+            'tickets.close_own',
+            'tickets.add_watcher',
             'api_tokens.manage',
             'webhooks.manage',
         ]);
@@ -64,6 +74,8 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.view_company',
             'tickets.create',
             'tickets.comment_public',
+            'tickets.close_own',
+            'tickets.add_watcher',
         ]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -82,6 +83,32 @@ class Ticket extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(TicketAttachment::class);
+    }
+
+    public function targetDepartments(): BelongsToMany
+    {
+        return $this->belongsToMany(SupportDepartment::class, 'ticket_target_departments')
+            ->withPivot('added_by_user_id')
+            ->withTimestamps();
+    }
+
+    public function targetUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'ticket_target_users')
+            ->withPivot('added_by_user_id')
+            ->withTimestamps();
+    }
+
+    public function watchers(): HasMany
+    {
+        return $this->hasMany(TicketWatcher::class);
+    }
+
+    public function watcherUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'ticket_watchers')
+            ->withPivot(['side', 'added_by_user_id', 'notified_at'])
+            ->withTimestamps();
     }
 
     public function events(): HasMany

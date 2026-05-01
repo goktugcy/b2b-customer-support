@@ -48,9 +48,11 @@ class TicketController extends Controller
             'subject' => $request->validated('subject'),
             'description' => $request->validated('description'),
             'priority' => $request->validated('priority') ?? null,
+            'target_department_ids' => $request->validated('target_department_ids', []),
+            'target_user_ids' => $request->validated('target_user_ids', []),
         ], $client, TicketSource::Api, $request);
 
-        $response = (new TicketResource($ticket->load(['company', 'assignee'])))
+        $response = (new TicketResource($ticket->load(['company', 'assignee', 'targetDepartments', 'targetUsers'])))
             ->response()
             ->setStatusCode(201);
 
@@ -69,6 +71,8 @@ class TicketController extends Controller
         return new TicketResource($ticket->load([
             'company',
             'assignee',
+            'targetDepartments',
+            'targetUsers',
             'comments' => fn ($query) => $query->visibleTo($request->user())->with(['user', 'apiClient'])->oldest(),
             'attachments' => fn ($query) => $query->where('visibility', TicketVisibility::Public->value),
         ]));

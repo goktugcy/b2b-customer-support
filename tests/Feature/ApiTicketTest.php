@@ -6,6 +6,7 @@ use App\Enums\CompanyType;
 use App\Enums\TicketPriority;
 use App\Models\ApiClient;
 use App\Models\Company;
+use App\Models\SupportDepartment;
 use App\Models\Ticket;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,12 +23,14 @@ class ApiTicketTest extends TestCase
             'name' => 'Integration',
             'status' => 'active',
         ]);
+        $department = SupportDepartment::factory()->create();
         $token = $client->createToken('integration', ['tickets:create', 'tickets:read'])->plainTextToken;
 
         $payload = [
             'subject' => 'API ticket',
             'description' => 'Created through the API',
             'priority' => TicketPriority::High->value,
+            'target_department_ids' => [$department->public_id],
         ];
 
         $first = $this->withToken($token)

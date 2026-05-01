@@ -5,15 +5,17 @@ namespace App\Models;
 use App\Enums\AttachmentScanStatus;
 use App\Enums\TicketVisibility;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketAttachment extends Model
 {
-    use BelongsToCompany, HasFactory;
+    use BelongsToCompany, HasFactory, HasPublicId;
 
     protected $fillable = [
+        'public_id',
         'company_id',
         'ticket_id',
         'comment_id',

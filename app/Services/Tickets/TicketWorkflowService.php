@@ -67,6 +67,25 @@ class TicketWorkflowService
         ], $statuses);
     }
 
+    public function availableCustomerTransitions(Ticket $ticket, User $actor): array
+    {
+        if (! $this->canCustomerClose($ticket, $actor)) {
+            return [];
+        }
+
+        if ($ticket->status === TicketStatus::Closed) {
+            return [];
+        }
+
+        return array_map(fn (TicketStatus $status): array => [
+            'value' => $status->value,
+            'label' => $status->label(),
+        ], [
+            TicketStatus::Resolved,
+            TicketStatus::Closed,
+        ]);
+    }
+
     public function transition(Ticket $ticket, TicketStatus $to, User|ApiClient $actor, ?Request $request = null): Ticket
     {
         if ($actor instanceof ApiClient) {
@@ -78,6 +97,27 @@ class TicketWorkflowService
         }
 
         $this->assertCanTransition($ticket, $to, $actor);
+
+        return $this->forceTransition($ticket, $to, $actor, $request);
+    }
+
+    public function customerTransition(Ticket $ticket, TicketStatus $to, User $actor, ?Request $request = null): Ticket
+    {
+        if (! $this->canCustomerClose($ticket, $actor)) {
+            throw new AuthorizationException('You are not allowed to close this ticket.');
+        }
+
+        if ($ticket->status === TicketStatus::Closed) {
+            throw ValidationException::withMessages([
+                'status' => 'Closed tickets can only be reopened by an authorized provider user.',
+            ]);
+        }
+
+        if (! in_array($to, [TicketStatus::Resolved, TicketStatus::Closed], true)) {
+            throw ValidationException::withMessages([
+                'status' => 'Customer users can only mark tickets as resolved or closed.',
+            ]);
+        }
 
         return $this->forceTransition($ticket, $to, $actor, $request);
     }
@@ -135,6 +175,14 @@ class TicketWorkflowService
         if (! in_array($to, $allowed, true)) {
             throw ValidationException::withMessages(['status' => 'This ticket status transition is not allowed.']);
         }
+    }
+
+    private function canCustomerClose(Ticket $ticket, User $actor): bool
+    {
+        return $actor->isCustomerUser()
+            && $actor->company_id === $ticket->company_id
+            && in_array($actor->id, [$ticket->created_by_user_id, $ticket->requester_user_id], true)
+            && $actor->can('tickets.close_own');
     }
 
     private function eventTypeForStatus(TicketStatus $to, TicketStatus $from): string

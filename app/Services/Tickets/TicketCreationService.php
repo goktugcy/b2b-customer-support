@@ -11,6 +11,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class TicketCreationService
@@ -18,10 +19,12 @@ class TicketCreationService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly TicketEventRecorder $events,
+        private readonly TicketTargetService $targets,
+        private readonly TicketAttachmentService $attachments,
     ) {}
 
     /**
-     * @param  array{company_id:int, subject:string, description:string, priority?:string|TicketPriority, assigned_to_user_id?:int|null}  $data
+     * @param  array{company_id:int, subject:string, description:string, priority?:string|TicketPriority, assigned_to_user_id?:int|null, target_department_ids?:list<string>, target_user_ids?:list<string>, attachments?:list<UploadedFile>}  $data
      */
     public function create(array $data, User|ApiClient $actor, TicketSource $source, ?Request $request = null): Ticket
     {
@@ -62,6 +65,18 @@ class TicketCreationService
                 'priority',
                 'source',
             ]), request: $request);
+
+            $this->targets->sync(
+                $ticket,
+                $data['target_department_ids'] ?? [],
+                $data['target_user_ids'] ?? [],
+                $actor,
+                $request,
+            );
+
+            foreach ($data['attachments'] ?? [] as $file) {
+                $this->attachments->store($ticket, $file, $actor, request: $request);
+            }
 
             SendTicketNotification::dispatch($ticket, 'ticket.created')->afterCommit()->onQueue('notifications');
 

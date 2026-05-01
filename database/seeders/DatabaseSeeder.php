@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Enums\CompanyType;
 use App\Enums\RoleName;
+use App\Enums\SupportDepartmentStatus;
 use App\Models\Company;
+use App\Models\SupportDepartment;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -41,6 +43,15 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $user->assignRole(RoleName::ProviderAdmin->value);
+
+        SupportDepartment::firstOrCreate([
+            'company_id' => $provider->id,
+            'slug' => 'general-support',
+        ], [
+            'name' => 'General Support',
+            'description' => 'Default support queue for incoming customer tickets.',
+            'status' => SupportDepartmentStatus::Active,
+        ]);
 
         Company::firstOrCreate([
             'slug' => 'acme-corp',

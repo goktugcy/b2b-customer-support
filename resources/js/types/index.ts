@@ -15,6 +15,12 @@ export type SelectOption = {
   label: string
 }
 
+export type MultiSelectOption = {
+  id: string
+  name: string
+  department_ids?: string[]
+}
+
 export type Flash = {
   success?: string | null
   error?: string | null
