@@ -1,0 +1,147 @@
+<script setup lang="ts">
+import { Link, useForm } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+import Button from '@/Components/ui/button/Button.vue'
+import Textarea from '@/Components/ui/textarea/Textarea.vue'
+import Input from '@/Components/ui/input/Input.vue'
+import Label from '@/Components/ui/label/Label.vue'
+import Badge from '@/Components/ui/badge/Badge.vue'
+import FieldError from '@/Components/shared/FieldError.vue'
+import type { SelectOption } from '@/types'
+
+type TicketDetail = {
+  id: string
+  subject: string
+  description: string
+  status: string
+  priority: string
+  company: string
+  assignee?: string
+  requester?: string
+  comments: { id: string; body: string; visibility: string; author?: string; created_at: string }[]
+  events: { id: number; type: string; actor?: string; old_values?: unknown; new_values?: unknown; occurred_at: string }[]
+}
+
+const props = defineProps<{
+  ticket: TicketDetail
+  statuses: SelectOption[]
+  priorities: SelectOption[]
+  transitions: SelectOption[]
+  agents: { public_id: string; name: string }[]
+}>()
+
+const editForm = useForm({
+  subject: props.ticket.subject,
+  priority: props.ticket.priority,
+})
+
+const statusForm = useForm({ status: props.transitions[0]?.value ?? props.ticket.status })
+const assignForm = useForm({ assigned_to_user_id: '' })
+const commentForm = useForm({ body: '', visibility: 'public' })
+
+const updateTicket = () => editForm.patch(route('admin.tickets.update', props.ticket.id), { preserveScroll: true })
+const changeStatus = () => statusForm.patch(route('admin.tickets.status', props.ticket.id), { preserveScroll: true })
+const assignTicket = () => assignForm.patch(route('admin.tickets.assignment', props.ticket.id), { preserveScroll: true })
+const addComment = () => commentForm.post(route('admin.tickets.comments.store', props.ticket.id), {
+  preserveScroll: true,
+  onSuccess: () => commentForm.reset('body'),
+})
+</script>
+
+<template>
+  <AdminLayout :title="ticket.subject">
+    <div class="mb-2">
+      <Link :href="route('admin.tickets.index')" class="text-sm font-medium text-teal-800">Back to tickets</Link>
+    </div>
+
+    <section class="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div class="space-y-6">
+        <div class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-semibold">{{ ticket.subject }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ ticket.company }} · {{ ticket.requester || 'No requester' }}</p>
+            </div>
+            <div class="flex gap-2">
+              <Badge tone="blue">{{ ticket.status }}</Badge>
+              <Badge tone="neutral">{{ ticket.priority }}</Badge>
+            </div>
+          </div>
+          <p class="mt-5 whitespace-pre-wrap text-sm leading-6 text-slate-700">{{ ticket.description }}</p>
+        </div>
+
+        <div class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 class="text-sm font-semibold">Conversation</h3>
+          <div class="mt-4 space-y-3">
+            <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border border-slate-200 p-3">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-medium">{{ comment.author || 'System' }}</p>
+                <Badge :tone="comment.visibility === 'internal' ? 'amber' : 'green'">{{ comment.visibility }}</Badge>
+              </div>
+              <p class="mt-2 whitespace-pre-wrap text-sm text-slate-700">{{ comment.body }}</p>
+            </div>
+          </div>
+
+          <form class="mt-5 space-y-3" @submit.prevent="addComment">
+            <Label>Reply</Label>
+            <Textarea v-model="commentForm.body" required />
+            <FieldError :message="commentForm.errors.body" />
+            <div class="flex items-center justify-between">
+              <select v-model="commentForm.visibility" class="h-9 rounded-md border-slate-300 text-sm">
+                <option value="public">Public reply</option>
+                <option value="internal">Internal note</option>
+              </select>
+              <Button type="submit" :disabled="commentForm.processing">Add comment</Button>
+            </div>
+          </form>
+        </div>
+
+        <div class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 class="text-sm font-semibold">Timeline</h3>
+          <ol class="mt-4 space-y-3">
+            <li v-for="event in ticket.events" :key="event.id" class="border-l-2 border-slate-200 pl-3">
+              <p class="text-sm font-medium">{{ event.type }}</p>
+              <p class="text-xs text-slate-500">{{ event.actor || 'System' }} · {{ event.occurred_at }}</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <form class="rounded-md border border-slate-200 bg-white p-4 shadow-sm" @submit.prevent="updateTicket">
+          <h3 class="text-sm font-semibold">Details</h3>
+          <div class="mt-4 space-y-3">
+            <div>
+              <Label>Subject</Label>
+              <Input v-model="editForm.subject" class="mt-1" />
+            </div>
+            <div>
+              <Label>Priority</Label>
+              <select v-model="editForm.priority" class="mt-1 h-10 w-full rounded-md border-slate-300 text-sm">
+                <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
+              </select>
+            </div>
+            <Button type="submit" variant="secondary" class="w-full">Save details</Button>
+          </div>
+        </form>
+
+        <form class="rounded-md border border-slate-200 bg-white p-4 shadow-sm" @submit.prevent="changeStatus">
+          <h3 class="text-sm font-semibold">Status</h3>
+          <select v-model="statusForm.status" class="mt-4 h-10 w-full rounded-md border-slate-300 text-sm">
+            <option v-for="status in transitions" :key="status.value" :value="status.value">{{ status.label }}</option>
+          </select>
+          <Button type="submit" class="mt-3 w-full" :disabled="!transitions.length">Change status</Button>
+        </form>
+
+        <form class="rounded-md border border-slate-200 bg-white p-4 shadow-sm" @submit.prevent="assignTicket">
+          <h3 class="text-sm font-semibold">Assignment</h3>
+          <select v-model="assignForm.assigned_to_user_id" class="mt-4 h-10 w-full rounded-md border-slate-300 text-sm">
+            <option value="">Unassigned</option>
+            <option v-for="agent in agents" :key="agent.public_id" :value="agent.public_id">{{ agent.name }}</option>
+          </select>
+          <Button type="submit" class="mt-3 w-full" variant="secondary">Update assignment</Button>
+        </form>
+      </div>
+    </section>
+  </AdminLayout>
+</template>

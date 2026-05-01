@@ -15,13 +15,19 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    $user = request()->user();
 
-Route::middleware('auth')->group(function () {
+    return redirect($user?->isProviderUser()
+        ? route('admin.tickets.index', absolute: false)
+        : route('portal.tickets.index', absolute: false));
+})->middleware(['auth', 'verified', 'active.user'])->name('dashboard');
+
+Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+require __DIR__.'/admin.php';
+require __DIR__.'/portal.php';
 require __DIR__.'/auth.php';
