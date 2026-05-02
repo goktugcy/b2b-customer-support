@@ -144,7 +144,7 @@ const submit = () => form.post(route('portal.tickets.store'), {
         </CardContent>
       </Card>
 
-      <div class="space-y-4">
+      <div class="space-y-4 lg:sticky lg:top-20 lg:self-start">
         <Card>
           <CardHeader><CardTitle class="text-sm">Routing</CardTitle></CardHeader>
           <CardContent class="space-y-4">

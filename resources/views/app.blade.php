@@ -10,9 +10,22 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <script>
+            (() => {
+                const key = 'supportdesk-theme';
+                const stored = localStorage.getItem(key);
+                const preference = ['light', 'dark', 'system'].includes(stored) ? stored : 'system';
+                const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const dark = preference === 'dark' || (preference === 'system' && systemDark);
+
+                document.documentElement.classList.toggle('dark', dark);
+                document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+            })();
+        </script>
+
         <!-- Scripts -->
         @routes
-        @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
+        @vite(['resources/js/app.ts', "resources/js/Pages/{$page['component']}.vue"])
         @inertiaHead
     </head>
     <body class="font-sans antialiased">

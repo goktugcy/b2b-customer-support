@@ -183,7 +183,7 @@ const uploadAttachments = () => {
           </CardHeader>
           <CardContent>
             <div class="space-y-3">
-              <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border bg-background p-3">
+              <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border bg-background/70 p-3">
                 <div class="flex items-center justify-between gap-2">
                   <p class="text-sm font-medium">{{ comment.author || 'System' }}</p>
                   <Badge :tone="comment.visibility === 'internal' ? 'amber' : 'green'">{{ comment.visibility }}</Badge>
@@ -226,7 +226,7 @@ const uploadAttachments = () => {
         </Card>
       </div>
 
-      <div class="space-y-4">
+      <div class="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Card>
           <CardHeader><CardTitle class="text-sm">Details</CardTitle></CardHeader>
           <CardContent>

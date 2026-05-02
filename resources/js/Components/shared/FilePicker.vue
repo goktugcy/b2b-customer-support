@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
       @drop.prevent="onDrop"
     >
       <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-card text-muted-foreground shadow-sm">
           <UploadCloud class="h-5 w-5" />
         </div>
         <div class="min-w-0 flex-1">
@@ -229,7 +229,7 @@ onBeforeUnmount(() => {
       <li
         v-for="(item, index) in selectedFiles"
         :key="`${item.file.name}-${index}`"
-        class="flex min-w-0 items-center gap-3 rounded-md border bg-background p-2 text-sm"
+        class="flex min-w-0 items-center gap-3 rounded-md border bg-card p-2 text-sm shadow-sm"
       >
         <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/30 text-muted-foreground">
           <img

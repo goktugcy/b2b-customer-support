@@ -65,7 +65,7 @@ const saveSla = (company: Company, policy: Company['sla_policies'][number]) => {
       <CardHeader><CardTitle class="text-sm">SLA policies</CardTitle></CardHeader>
       <CardContent>
         <div class="space-y-3">
-          <div v-for="policy in company.sla_policies" :key="policy.id" class="grid gap-3 rounded-md border bg-background p-3 text-sm md:grid-cols-[120px_1fr_1fr_100px_auto]">
+          <div v-for="policy in company.sla_policies" :key="policy.id" class="grid gap-3 rounded-md border bg-background/70 p-3 text-sm md:grid-cols-[120px_1fr_1fr_100px_auto]">
             <div class="font-medium capitalize">{{ policy.priority }}</div>
             <label class="space-y-1">
               <span class="text-xs text-muted-foreground">First response minutes</span>

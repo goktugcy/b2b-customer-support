@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { Plus } from 'lucide-vue-next'
+import { Filter, Plus, Search } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
@@ -8,6 +8,8 @@ import Select from '@/Components/ui/select/Select.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
+import CardHeader from '@/Components/ui/card/CardHeader.vue'
+import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import Table from '@/Components/ui/table/Table.vue'
 import TableBody from '@/Components/ui/table/TableBody.vue'
 import TableCell from '@/Components/ui/table/TableCell.vue'
@@ -67,7 +69,8 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
   <AdminLayout title="Tickets">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl font-semibold tracking-tight">Tickets</h1>
+        <h2 class="text-xl font-semibold tracking-normal">Ticket operations</h2>
+        <p class="mt-1 text-sm text-muted-foreground">Filter customer requests by queue, SLA, taxonomy, and ownership.</p>
       </div>
       <Link :href="route('admin.tickets.create')">
         <Button><Plus class="h-4 w-4" /> Create ticket</Button>
@@ -75,9 +78,18 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
     </div>
 
     <Card class="mt-4">
+      <CardHeader class="pb-3">
+        <div class="flex items-center gap-2">
+          <Filter class="h-4 w-4 text-primary" />
+          <CardTitle class="text-sm">Filters</CardTitle>
+        </div>
+      </CardHeader>
       <CardContent class="p-4">
         <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-9">
-          <Input v-model="filter.search" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+          <div class="relative md:col-span-2 xl:col-span-2">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input v-model="filter.search" class="pl-9" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+          </div>
           <Select v-model="filter.queue" @change="applyFilters">
             <option value="">All queues</option>
             <option value="mine">Mine</option>

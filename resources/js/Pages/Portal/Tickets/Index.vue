@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
+import { Plus, Search } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
@@ -53,34 +54,48 @@ const applyFilters = () => router.get(route('portal.tickets.index'), filter.data
 <template>
   <PortalLayout title="Tickets">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="grid flex-1 gap-3 md:grid-cols-6">
-        <Input v-model="filter.search" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
-        <Select v-model="filter.queue" @change="applyFilters">
-          <option value="">All queues</option>
-          <option value="mine">My tickets</option>
-          <option value="unassigned">Unassigned</option>
-          <option value="overdue">Overdue</option>
-          <option value="due_soon">Due soon</option>
-        </Select>
-        <Select v-model="filter.status" @change="applyFilters">
-          <option value="">All statuses</option>
-          <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
-        </Select>
-        <Select v-model="filter.project" @change="applyFilters">
-          <option value="">All projects</option>
-          <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
-        </Select>
-        <Select v-model="filter.tracker" @change="applyFilters">
-          <option value="">All trackers</option>
-          <option v-for="tracker in trackers" :key="tracker.id" :value="tracker.id">{{ tracker.name }}</option>
-        </Select>
-        <Select v-model="filter.tag" @change="applyFilters">
-          <option value="">All tags</option>
-          <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
-        </Select>
+      <div>
+        <h2 class="text-xl font-semibold tracking-normal">Company tickets</h2>
+        <p class="mt-1 text-sm text-muted-foreground">Search and follow requests across your workspace.</p>
       </div>
-      <Link :href="route('portal.tickets.create')"><Button>Create ticket</Button></Link>
+      <Link :href="route('portal.tickets.create')">
+        <Button><Plus class="h-4 w-4" /> Create ticket</Button>
+      </Link>
     </div>
+
+    <Card class="mt-4">
+      <CardContent class="p-4">
+        <div class="grid gap-3 md:grid-cols-6">
+          <div class="relative md:col-span-2">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input v-model="filter.search" class="pl-9" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+          </div>
+          <Select v-model="filter.queue" @change="applyFilters">
+            <option value="">All queues</option>
+            <option value="mine">My tickets</option>
+            <option value="unassigned">Unassigned</option>
+            <option value="overdue">Overdue</option>
+            <option value="due_soon">Due soon</option>
+          </Select>
+          <Select v-model="filter.status" @change="applyFilters">
+            <option value="">All statuses</option>
+            <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
+          </Select>
+          <Select v-model="filter.project" @change="applyFilters">
+            <option value="">All projects</option>
+            <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
+          </Select>
+          <Select v-model="filter.tracker" @change="applyFilters">
+            <option value="">All trackers</option>
+            <option v-for="tracker in trackers" :key="tracker.id" :value="tracker.id">{{ tracker.name }}</option>
+          </Select>
+          <Select v-model="filter.tag" @change="applyFilters">
+            <option value="">All tags</option>
+            <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
 
     <Card class="mt-4 overflow-hidden">
       <CardContent class="p-0">

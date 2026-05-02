@@ -5,7 +5,7 @@ defineProps<{ class?: string }>()
 </script>
 
 <template>
-  <tr :class="cn('border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted', $props.class)">
+  <tr :class="cn('border-b transition-colors hover:bg-muted/45 data-[state=selected]:bg-muted', $props.class)">
     <slot />
   </tr>
 </template>

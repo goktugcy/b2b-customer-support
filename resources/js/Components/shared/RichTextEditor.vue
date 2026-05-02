@@ -76,7 +76,7 @@ const toolbarButtonClass = (active = false) => cn(active && 'bg-secondary text-s
 </script>
 
 <template>
-  <div :class="cn('overflow-hidden rounded-md border border-input bg-background shadow-sm', props.class)">
+  <div :class="cn('overflow-hidden rounded-md border border-input bg-card shadow-sm', props.class)">
     <div v-if="editor" class="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-2">
       <Button type="button" size="icon" variant="ghost" :class="toolbarButtonClass(editor.isActive('bold'))" title="Bold" aria-label="Bold" @click="editor.chain().focus().toggleBold().run()">
         <Bold />

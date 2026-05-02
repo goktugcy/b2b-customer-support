@@ -122,7 +122,7 @@ const uploadAttachments = () => {
           <CardHeader><CardTitle class="text-sm">Conversation</CardTitle></CardHeader>
           <CardContent>
             <div class="space-y-3">
-              <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border bg-background p-3">
+              <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border bg-background/70 p-3">
                 <p class="text-sm font-medium">{{ comment.author || 'Support' }}</p>
                 <RichContent class="mt-2" :html="comment.body" />
                 <AttachmentList :attachments="comment.attachments" />
@@ -139,7 +139,7 @@ const uploadAttachments = () => {
         </Card>
       </div>
 
-      <div class="space-y-4">
+      <div class="space-y-4 lg:sticky lg:top-20 lg:self-start">
         <Card>
           <CardHeader><CardTitle class="text-sm">Ticket details</CardTitle></CardHeader>
           <CardContent>

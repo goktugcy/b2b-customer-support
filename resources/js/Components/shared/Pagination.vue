@@ -15,7 +15,7 @@ defineProps<{ links: PaginationLink[] }>()
       preserve-scroll
       :class="cn(
         'inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium shadow-sm transition-colors',
-        link.active ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-background text-foreground hover:bg-secondary',
+        link.active ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card text-foreground hover:bg-secondary',
         !link.url && 'pointer-events-none opacity-40',
       )"
       v-html="link.label"

@@ -53,7 +53,7 @@ const remove = (id: string) => {
     <PopoverTrigger as-child>
       <button
         type="button"
-        :class="cn('flex min-h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm shadow-sm transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', props.class)"
+        :class="cn('flex min-h-10 w-full items-center gap-2 rounded-md border border-input bg-card px-3 py-2 text-left text-sm shadow-sm transition-colors hover:border-ring/40 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background', props.class)"
       >
         <div class="flex min-w-0 flex-1 flex-wrap gap-1">
           <Badge v-for="option in selectedOptions" :key="option.id" tone="neutral" class="max-w-full gap-1">

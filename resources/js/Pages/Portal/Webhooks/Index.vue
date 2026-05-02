@@ -44,7 +44,7 @@ const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(ro
                   <Link :href="route('portal.webhooks.destroy', endpoint.public_id)" method="delete" as="button" class="text-sm font-medium text-destructive">Disable</Link>
                 </div>
               </div>
-              <div v-if="endpoint.deliveries.length" class="mt-3 space-y-2 rounded-md border bg-background p-3">
+              <div v-if="endpoint.deliveries.length" class="mt-3 space-y-2 rounded-md border bg-background/70 p-3">
                 <div v-for="delivery in endpoint.deliveries" :key="delivery.id" class="grid gap-2 text-xs md:grid-cols-[1fr_100px_80px_80px_auto]">
                   <div class="min-w-0">
                     <p class="font-medium">{{ delivery.event_type }}</p>

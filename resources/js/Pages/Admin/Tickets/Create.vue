@@ -176,7 +176,7 @@ const submit = () => form.post(route('admin.tickets.store'), {
         </Card>
       </div>
 
-      <div class="space-y-4">
+      <div class="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Card>
           <CardHeader><CardTitle class="text-sm">Routing</CardTitle></CardHeader>
           <CardContent class="space-y-4">
