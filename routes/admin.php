@@ -1,13 +1,16 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AutomationRuleController;
 use App\Http\Controllers\Admin\CannedResponseController;
 use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\CsatController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\IssueTrackingController;
 use App\Http\Controllers\Admin\KnowledgeBaseController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\SupportDepartmentController;
 use App\Http\Controllers\Admin\TicketBulkController;
 use App\Http\Controllers\Admin\TicketController;
@@ -21,6 +24,7 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', fn () => redirect()->route('admin.home'))->name('dashboard');
+        Route::get('search', SearchController::class)->name('search');
 
         Route::patch('tickets/bulk', TicketBulkController::class)->name('tickets.bulk');
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store']);
@@ -36,6 +40,7 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
             Route::delete('companies/{company:slug}/tickets/{ticket:ticket_number}/watchers/{user}', [TicketController::class, 'removeWatcher'])->whereNumber('ticket')->name('tickets.watchers.destroy');
             Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/attachments', [TicketController::class, 'attachment'])->whereNumber('ticket')->name('tickets.attachments.store');
             Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/comments', [TicketController::class, 'comment'])->whereNumber('ticket')->name('tickets.comments.store');
+            Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/csat/resend', [CsatController::class, 'resend'])->whereNumber('ticket')->name('tickets.csat.resend');
         });
         Route::get('tickets/{ticket}', [TicketController::class, 'legacyShow'])->name('tickets.legacy-show');
         Route::post('ticket-views', [TicketSavedViewController::class, 'store'])->name('ticket-views.store');
@@ -45,14 +50,18 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
         Route::get('knowledge-base', [KnowledgeBaseController::class, 'index'])->name('knowledge-base.index');
         Route::post('knowledge-base/categories', [KnowledgeBaseController::class, 'storeCategory'])->name('knowledge-base.categories.store');
         Route::patch('knowledge-base/categories/{category}', [KnowledgeBaseController::class, 'updateCategory'])->name('knowledge-base.categories.update');
+        Route::delete('knowledge-base/categories/{category}', [KnowledgeBaseController::class, 'destroyCategory'])->name('knowledge-base.categories.destroy');
         Route::post('knowledge-base/articles', [KnowledgeBaseController::class, 'storeArticle'])->name('knowledge-base.articles.store');
         Route::patch('knowledge-base/articles/{article}', [KnowledgeBaseController::class, 'updateArticle'])->name('knowledge-base.articles.update');
+        Route::delete('knowledge-base/articles/{article}', [KnowledgeBaseController::class, 'destroyArticle'])->name('knowledge-base.articles.destroy');
 
         Route::resource('canned-responses', CannedResponseController::class)
             ->parameters(['canned-responses' => 'cannedResponse'])
             ->only(['index', 'store', 'update', 'destroy']);
 
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('reports/exports', [ReportController::class, 'storeExport'])->name('reports.exports.store');
+        Route::get('reports/exports/{reportExport}/download', [ReportController::class, 'download'])->name('reports.exports.download');
         Route::get('reports/tickets.csv', [ReportController::class, 'ticketsCsv'])->name('reports.tickets.csv');
         Route::get('reports/tickets.pdf', [ReportController::class, 'ticketsPdf'])->name('reports.tickets.pdf');
         Route::get('reports/csat.csv', [ReportController::class, 'csatCsv'])->name('reports.csat.csv');
@@ -73,6 +82,7 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
         Route::patch('issue-tracking/custom-fields/{customField}', [IssueTrackingController::class, 'updateCustomField'])->name('issue-tracking.custom-fields.update');
         Route::delete('issue-tracking/custom-fields/{customField}', [IssueTrackingController::class, 'destroyCustomField'])->name('issue-tracking.custom-fields.destroy');
         Route::resource('companies', CompanyController::class)->only(['index', 'store', 'show']);
+        Route::patch('companies/{company}/branding', [CompanyController::class, 'updateBranding'])->name('companies.branding.update');
         Route::patch('companies/{company}/sla-policies/{policy}', [CompanyController::class, 'updateSlaPolicy'])->name('companies.sla-policies.update');
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -81,6 +91,11 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
         Route::patch('invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('invitations.resend');
         Route::delete('invitations/{invitation}', [InvitationController::class, 'revoke'])->name('invitations.revoke');
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('audit-logs.csv', [AuditLogController::class, 'csv'])->name('audit-logs.csv');
+        Route::resource('automation-rules', AutomationRuleController::class)
+            ->parameters(['automation-rules' => 'automationRule'])
+            ->only(['index', 'store', 'update', 'destroy']);
+        Route::post('automation-rules/preview', [AutomationRuleController::class, 'preview'])->name('automation-rules.preview');
 
         Route::get('dashboard', DashboardController::class)->name('home');
     });

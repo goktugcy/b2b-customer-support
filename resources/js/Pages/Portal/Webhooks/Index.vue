@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
@@ -11,15 +12,17 @@ import CardContent from '@/Components/ui/card/CardContent.vue'
 import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
+import Textarea from '@/Components/ui/textarea/Textarea.vue'
 
-type Delivery = { id: string; event_type: string; status: string; attempts: number; response_status?: number; response_body_excerpt?: string; next_attempt_at?: string; delivered_at?: string; created_at?: string }
+type Delivery = { id: string; event_type: string; status: string; attempts: number; response_status?: number; response_body_excerpt?: string; payload?: unknown; next_attempt_at?: string; delivered_at?: string; created_at?: string }
 type Endpoint = { id: number; public_id: string; url: string; status: string; events: string[]; failure_count: number; deliveries_count: number; last_success_at?: string; last_failure_at?: string; deliveries: Delivery[] }
 
 defineProps<{ endpoints: Endpoint[]; events: string[] }>()
 
 const form = useForm({ url: '', events: ['ticket.created', 'ticket.status_changed'] as string[] })
+const testPayload = ref(JSON.stringify({ type: 'webhook.test', data: { message: 'Custom test payload' } }, null, 2))
 const submit = () => form.post(route('portal.webhooks.store'), { preserveScroll: true, onSuccess: () => form.reset('url') })
-const testEndpoint = (endpoint: Endpoint) => router.post(route('portal.webhooks.test', endpoint.public_id), {}, { preserveScroll: true })
+const testEndpoint = (endpoint: Endpoint) => router.post(route('portal.webhooks.test', endpoint.public_id), { payload: testPayload.value }, { preserveScroll: true })
 const rotateSecret = (endpoint: Endpoint) => router.patch(route('portal.webhooks.secret', endpoint.public_id), {}, { preserveScroll: true })
 const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(route('portal.webhooks.deliveries.retry', [endpoint.public_id, delivery.id]), {}, { preserveScroll: true })
 </script>
@@ -49,6 +52,7 @@ const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(ro
                   <div class="min-w-0">
                     <p class="font-medium">{{ delivery.event_type }}</p>
                     <p class="truncate text-muted-foreground">{{ delivery.response_body_excerpt || delivery.created_at }}</p>
+                    <pre v-if="delivery.payload" class="mt-2 max-h-40 overflow-auto rounded-md bg-muted p-2 text-[11px]">{{ JSON.stringify(delivery.payload, null, 2) }}</pre>
                   </div>
                   <Badge :tone="delivery.status === 'success' ? 'green' : delivery.status === 'failed' ? 'red' : 'amber'">{{ delivery.status }}</Badge>
                   <span class="text-muted-foreground">{{ delivery.response_status || '-' }}</span>
@@ -74,6 +78,10 @@ const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(ro
                 </label>
               </div>
               <FieldError :message="form.errors.events" />
+            </div>
+            <div>
+              <Label>Test payload</Label>
+              <Textarea v-model="testPayload" class="mt-1 font-mono text-xs" :rows="7" />
             </div>
             <Button type="submit" class="w-full">Create endpoint</Button>
           </form>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\NotificationPreference;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,12 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'notificationPreferences' => $request->user()->notificationPreference()->firstOrCreate([])->only([
+                'database_enabled',
+                'mail_enabled',
+                'digest_enabled',
+                'event_settings',
+            ]),
         ]);
     }
 
@@ -59,5 +66,22 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    public function updateNotifications(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'database_enabled' => ['required', 'boolean'],
+            'mail_enabled' => ['required', 'boolean'],
+            'digest_enabled' => ['required', 'boolean'],
+            'event_settings' => ['nullable', 'array'],
+        ]);
+
+        NotificationPreference::updateOrCreate(
+            ['user_id' => $request->user()->id],
+            $validated + ['event_settings' => $validated['event_settings'] ?? []],
+        );
+
+        return Redirect::route('profile.edit')->with('success', 'Notification preferences updated.');
     }
 }

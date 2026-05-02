@@ -14,6 +14,11 @@ class MetaController extends Controller
 {
     public function ticketOptions(Request $request, IssueTrackingService $issueTracking): JsonResponse
     {
+        abort_unless(
+            $request->user()->tokenCan('tickets:read') || $request->user()->tokenCan('tickets:create'),
+            403,
+        );
+
         $company = Company::query()->find($request->user()->company_id);
 
         return response()->json([

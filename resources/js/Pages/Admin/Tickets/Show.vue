@@ -146,6 +146,7 @@ const applyCannedResponse = () => {
 
 const mergeTicket = () => mergeForm.post(route('admin.tickets.merge', ticketRoute.value), { preserveScroll: true })
 const splitTicket = () => splitForm.post(route('admin.tickets.split', ticketRoute.value), { preserveScroll: true })
+const resendCsat = () => router.post(route('admin.tickets.csat.resend', ticketRoute.value), {}, { preserveScroll: true })
 
 const uploadAttachments = () => {
   attachmentUploadError.value = ''
@@ -329,6 +330,7 @@ const uploadAttachments = () => {
             <p class="text-2xl font-semibold">{{ ticket.csat.average_rating ? Number(ticket.csat.average_rating).toFixed(1) : '-' }}</p>
             <p class="text-sm text-muted-foreground">{{ ticket.csat.responses_count }} response(s)</p>
             <p v-if="ticket.csat.latest_rating" class="mt-2 text-sm">Latest rating: {{ ticket.csat.latest_rating }}/5</p>
+            <Button type="button" variant="secondary" class="mt-3 w-full" @click="resendCsat">Send reminder</Button>
         </CollapsibleMetaBox>
 
         <CollapsibleMetaBox title="Merge / split" :default-open="false" content-class="space-y-4">

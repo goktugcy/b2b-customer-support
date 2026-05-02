@@ -4,6 +4,7 @@ use App\Http\Controllers\Portal\ApiTokenController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\KnowledgeBaseController;
 use App\Http\Controllers\Portal\ReportController;
+use App\Http\Controllers\Portal\SearchController;
 use App\Http\Controllers\Portal\TicketController;
 use App\Http\Controllers\Portal\TicketSavedViewController;
 use App\Http\Controllers\Portal\UserController;
@@ -16,6 +17,7 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
     ->group(function (): void {
         Route::get('/', fn () => redirect()->route('portal.home'))->name('dashboard');
         Route::get('dashboard', DashboardController::class)->name('home');
+        Route::get('search', SearchController::class)->name('search');
 
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store']);
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
@@ -30,8 +32,11 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
 
         Route::get('knowledge-base', [KnowledgeBaseController::class, 'index'])->name('knowledge-base.index');
         Route::get('knowledge-base/{slug}', [KnowledgeBaseController::class, 'show'])->name('knowledge-base.show');
+        Route::post('knowledge-base/{slug}/feedback', [KnowledgeBaseController::class, 'feedback'])->name('knowledge-base.feedback');
 
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('reports/exports', [ReportController::class, 'storeExport'])->name('reports.exports.store');
+        Route::get('reports/exports/{reportExport}/download', [ReportController::class, 'download'])->name('reports.exports.download');
         Route::get('reports/tickets.csv', [ReportController::class, 'ticketsCsv'])->name('reports.tickets.csv');
         Route::get('reports/tickets.pdf', [ReportController::class, 'ticketsPdf'])->name('reports.tickets.pdf');
         Route::get('reports/csat.csv', [ReportController::class, 'csatCsv'])->name('reports.csat.csv');

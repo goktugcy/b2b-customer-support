@@ -20,12 +20,13 @@ class TicketAttachmentService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly TicketEventRecorder $events,
+        private readonly AttachmentScanService $scanner,
     ) {}
 
     public function store(
         Ticket $ticket,
         UploadedFile $file,
-        User|ApiClient $actor,
+        User|ApiClient|null $actor,
         TicketVisibility $visibility = TicketVisibility::Public,
         ?Request $request = null,
         ?TicketComment $comment = null,
@@ -36,6 +37,15 @@ class TicketAttachmentService
             $directory = 'tickets/'.$ticket->company->public_id.'/'.$ticket->public_id;
             $path = $file->store($directory, 'local');
             $absolutePath = Storage::disk('local')->path($path);
+            $checksum = is_file($absolutePath) ? hash_file('sha256', $absolutePath) : null;
+            $scan = $this->scanner->scan($absolutePath);
+
+            if ($scan['status'] === 'infected') {
+                $quarantinePath = 'quarantine/'.$path;
+                Storage::disk('local')->move($path, $quarantinePath);
+                $path = $quarantinePath;
+                $scan['status'] = 'quarantined';
+            }
 
             $attachment = TicketAttachment::create([
                 'company_id' => $ticket->company_id,
@@ -48,7 +58,10 @@ class TicketAttachmentService
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getClientMimeType(),
                 'size' => $file->getSize() ?: 0,
-                'checksum' => is_file($absolutePath) ? hash_file('sha256', $absolutePath) : null,
+                'checksum' => $checksum,
+                'scan_status' => $scan['status'],
+                'scan_result' => $scan['result'],
+                'scanned_at' => $scan['status'] !== 'skipped' ? now() : null,
                 'visibility' => $visibility,
                 'metadata' => [],
             ]);

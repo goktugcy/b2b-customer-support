@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3'
+import { router, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Button from '@/Components/ui/button/Button.vue'
@@ -17,13 +17,21 @@ type Company = {
   type: string
   status: string
   timezone: string
+  settings: { branding?: { display_name?: string | null; logo_url?: string | null; brand_color?: string | null } }
   users: { id: string; name: string; email: string; status: string; roles: string[] }[]
   api_clients: { id: string; name: string; status: string; last_used_at?: string }[]
   webhooks: { id: string; url: string; status: string; events: string[] }[]
   sla_policies: { id: number; priority: string; first_response_minutes: number; resolution_minutes: number; enabled: boolean }[]
 }
 
-defineProps<{ company: Company }>()
+const props = defineProps<{ company: Company }>()
+
+const brandingForm = useForm({
+  display_name: props.company.settings?.branding?.display_name ?? '',
+  logo_url: props.company.settings?.branding?.logo_url ?? '',
+  brand_color: props.company.settings?.branding?.brand_color ?? '#0f766e',
+  timezone: props.company.timezone,
+})
 
 const saveSla = (company: Company, policy: Company['sla_policies'][number]) => {
   router.patch(route('admin.companies.sla-policies.update', [company.id, policy.id]), {
@@ -31,6 +39,9 @@ const saveSla = (company: Company, policy: Company['sla_policies'][number]) => {
     resolution_minutes: policy.resolution_minutes,
     enabled: policy.enabled,
   }, { preserveScroll: true })
+}
+const saveBranding = (company: Company) => {
+  brandingForm.patch(route('admin.companies.branding.update', company.id), { preserveScroll: true })
 }
 </script>
 
@@ -60,6 +71,33 @@ const saveSla = (company: Company, policy: Company['sla_policies'][number]) => {
         </CardContent>
       </Card>
     </div>
+
+    <Card v-if="company.type === 'client'" class="mt-6">
+      <CardHeader><CardTitle class="text-sm">Portal branding</CardTitle></CardHeader>
+      <CardContent>
+        <form class="grid gap-3 md:grid-cols-4" @submit.prevent="saveBranding(company)">
+          <label class="space-y-1">
+            <span class="text-xs text-muted-foreground">Display name</span>
+            <Input v-model="brandingForm.display_name" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs text-muted-foreground">Logo URL</span>
+            <Input v-model="brandingForm.logo_url" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs text-muted-foreground">Brand color</span>
+            <Input v-model="brandingForm.brand_color" type="color" />
+          </label>
+          <label class="space-y-1">
+            <span class="text-xs text-muted-foreground">Timezone</span>
+            <Input v-model="brandingForm.timezone" />
+          </label>
+          <div class="md:col-span-4 flex justify-end">
+            <Button type="submit" :disabled="brandingForm.processing">Save branding</Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
 
     <Card v-if="company.type === 'client'" class="mt-6">
       <CardHeader><CardTitle class="text-sm">SLA policies</CardTitle></CardHeader>

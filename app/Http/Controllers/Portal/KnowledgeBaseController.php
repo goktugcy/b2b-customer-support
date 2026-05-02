@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Models\KnowledgeBaseArticle;
 use App\Services\KnowledgeBase\KnowledgeBaseService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,12 +34,39 @@ class KnowledgeBaseController extends Controller
         $article = KnowledgeBaseArticle::query()
             ->visibleToPortal()
             ->with('category')
+            ->withCount([
+                'feedback',
+                'feedback as helpful_count' => fn ($query) => $query->where('helpful', true),
+                'feedback as not_helpful_count' => fn ($query) => $query->where('helpful', false),
+            ])
             ->where('slug', $slug)
             ->firstOrFail();
 
         return Inertia::render('Portal/KnowledgeBase/Show', [
-            'article' => $this->articlePayload($article) + ['body' => $article->body],
+            'article' => $this->articlePayload($article) + [
+                'body' => $article->body,
+                'feedback_count' => $article->feedback_count ?? 0,
+                'helpful_count' => $article->helpful_count ?? 0,
+                'not_helpful_count' => $article->not_helpful_count ?? 0,
+            ],
         ]);
+    }
+
+    public function feedback(Request $request, string $slug, KnowledgeBaseService $knowledgeBase): RedirectResponse
+    {
+        $article = KnowledgeBaseArticle::query()
+            ->visibleToPortal()
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'helpful' => ['required', 'boolean'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $knowledgeBase->storeFeedback($article, $request->user(), (bool) $validated['helpful'], $validated['comment'] ?? null, $request);
+
+        return back()->with('success', 'Feedback recorded.');
     }
 
     private function articlePayload(KnowledgeBaseArticle $article): array

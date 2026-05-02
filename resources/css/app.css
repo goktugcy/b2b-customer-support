@@ -76,6 +76,21 @@
     @apply my-2;
   }
 
+  .rich-content h1,
+  .rich-editor-content h1 {
+    @apply my-4 text-2xl font-semibold leading-tight tracking-normal;
+  }
+
+  .rich-content h2,
+  .rich-editor-content h2 {
+    @apply my-3 text-xl font-semibold leading-tight tracking-normal;
+  }
+
+  .rich-content h3,
+  .rich-editor-content h3 {
+    @apply my-3 text-lg font-semibold leading-tight tracking-normal;
+  }
+
   .rich-content ul,
   .rich-editor-content ul {
     @apply my-2 list-disc pl-6;

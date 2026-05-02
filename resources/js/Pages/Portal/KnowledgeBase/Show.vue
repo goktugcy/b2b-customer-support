@@ -1,15 +1,26 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
-import { ArrowLeft } from 'lucide-vue-next'
+import { Link, useForm } from '@inertiajs/vue3'
+import { ArrowLeft, ThumbsDown, ThumbsUp } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
+import Button from '@/Components/ui/button/Button.vue'
+import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 
-defineProps<{
-  article: { id: string; title: string; body: string; excerpt?: string | null; category?: string | null; published_at?: string | null }
+const props = defineProps<{
+  article: { id: string; title: string; slug: string; body: string; excerpt?: string | null; category?: string | null; published_at?: string | null; feedback_count: number; helpful_count: number; not_helpful_count: number }
 }>()
+
+const feedbackForm = useForm({ helpful: true, comment: '' })
+const submitFeedback = (helpful: boolean) => {
+  feedbackForm.helpful = helpful
+  feedbackForm.post(route('portal.knowledge-base.feedback', props.article.slug), {
+    preserveScroll: true,
+    onSuccess: () => feedbackForm.reset('comment'),
+  })
+}
 </script>
 
 <template>
@@ -24,6 +35,19 @@ defineProps<{
         <h2 class="mt-4 text-2xl font-semibold tracking-normal">{{ article.title }}</h2>
         <p v-if="article.excerpt" class="mt-2 text-sm text-muted-foreground">{{ article.excerpt }}</p>
         <RichContent class="mt-6" :html="article.body" />
+        <div class="mt-8 rounded-md border bg-muted/30 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-medium">Was this article helpful?</p>
+              <p class="text-xs text-muted-foreground">{{ article.helpful_count }} helpful · {{ article.not_helpful_count }} not helpful</p>
+            </div>
+            <div class="flex gap-2">
+              <Button type="button" variant="secondary" @click="submitFeedback(true)"><ThumbsUp class="h-4 w-4" /> Yes</Button>
+              <Button type="button" variant="secondary" @click="submitFeedback(false)"><ThumbsDown class="h-4 w-4" /> No</Button>
+            </div>
+          </div>
+          <Textarea v-model="feedbackForm.comment" class="mt-3" :rows="3" placeholder="Optional comment" />
+        </div>
       </CardContent>
     </Card>
   </PortalLayout>

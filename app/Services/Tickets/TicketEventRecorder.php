@@ -2,6 +2,8 @@
 
 namespace App\Services\Tickets;
 
+use App\Events\TicketLiveUpdated;
+use App\Jobs\RunAutomationRules;
 use App\Models\ApiClient;
 use App\Models\Ticket;
 use App\Models\TicketEvent;
@@ -35,7 +37,11 @@ class TicketEventRecorder
             'occurred_at' => now(),
         ]);
 
-        DB::afterCommit(fn () => app(WebhookDispatcher::class)->dispatch($event));
+        DB::afterCommit(function () use ($event): void {
+            app(WebhookDispatcher::class)->dispatch($event);
+            TicketLiveUpdated::dispatch($event);
+            RunAutomationRules::dispatch($event)->onQueue('automation');
+        });
 
         return $event;
     }

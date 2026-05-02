@@ -26,6 +26,9 @@ class TicketAttachment extends Model
         'mime_type',
         'size',
         'checksum',
+        'scan_status',
+        'scan_result',
+        'scanned_at',
         'visibility',
         'metadata',
     ];
@@ -35,6 +38,7 @@ class TicketAttachment extends Model
         return [
             'visibility' => TicketVisibility::class,
             'metadata' => 'array',
+            'scanned_at' => 'datetime',
         ];
     }
 

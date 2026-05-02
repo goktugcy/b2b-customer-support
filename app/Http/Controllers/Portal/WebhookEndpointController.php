@@ -19,11 +19,21 @@ use Inertia\Response;
 class WebhookEndpointController extends Controller
 {
     public const EVENTS = [
+        '*',
         'ticket.created',
         'ticket.status_changed',
+        'ticket.resolved',
+        'ticket.closed',
+        'ticket.reopened',
         'ticket.assigned',
+        'ticket.targets_updated',
         'ticket.comment.created',
         'ticket.attachment.created',
+        'ticket.watcher_added',
+        'ticket.merged',
+        'ticket.split',
+        'csat.submitted',
+        'webhook.test',
     ];
 
     public function index(Request $request): Response
@@ -102,12 +112,18 @@ class WebhookEndpointController extends Controller
     public function test(Request $request, WebhookEndpoint $webhookEndpoint, AuditLogger $audit): RedirectResponse
     {
         $this->authorize('manage', $webhookEndpoint);
+        $customPayload = $request->input('payload');
+
+        if (is_string($customPayload) && $customPayload !== '') {
+            $decoded = json_decode($customPayload, true);
+            $customPayload = is_array($decoded) ? $decoded : null;
+        }
 
         $delivery = WebhookDelivery::create([
             'company_id' => $webhookEndpoint->company_id,
             'webhook_endpoint_id' => $webhookEndpoint->id,
             'event_type' => 'webhook.test',
-            'payload' => [
+            'payload' => $customPayload ?: [
                 'id' => 'evt_test_'.Str::lower(Str::random(8)),
                 'type' => 'webhook.test',
                 'occurred_at' => now()->toISOString(),
@@ -146,6 +162,7 @@ class WebhookEndpointController extends Controller
             'attempts' => $delivery->attempts,
             'response_status' => $delivery->response_status,
             'response_body_excerpt' => $delivery->response_body_excerpt,
+            'payload' => $delivery->payload,
             'next_attempt_at' => $delivery->next_attempt_at?->toISOString(),
             'delivered_at' => $delivery->delivered_at?->toISOString(),
             'created_at' => $delivery->created_at?->toISOString(),

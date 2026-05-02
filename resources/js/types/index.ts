@@ -94,6 +94,12 @@ export type AuthUser = {
     id: string
     name: string
     type: 'provider' | 'client'
+    timezone?: string
+    branding?: {
+      display_name?: string | null
+      logo_url?: string | null
+      brand_color?: string | null
+    } | null
   } | null
   roles: string[]
   permissions: string[]
@@ -116,6 +122,10 @@ export type PageProps = {
   notifications?: {
     unread_count: number
   }
+  app?: {
+    locale: string
+    timezone: string
+  }
 }
 
 type RouteFunction = {
@@ -129,6 +139,8 @@ declare global {
 
   interface Window {
     axios: typeof import('axios').default
+    Echo?: any
+    Pusher?: any
     route: RouteFunction
   }
 }

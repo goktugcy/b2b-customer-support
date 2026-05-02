@@ -13,6 +13,22 @@ components:
       type: http
       scheme: bearer
   schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+    PaginationMeta:
+      type: object
+      properties:
+        current_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
     TicketCreate:
       type: object
       required: [subject, description]
@@ -38,7 +54,7 @@ components:
     Ticket:
       type: object
       properties:
-        id: { type: string }
+        id: { type: string, description: Stable public API identifier. Existing API paths continue to use this value, not ticket_number. }
         ticket_number: { type: integer, description: Company-scoped human ticket number starting at 100001. }
         display_id: { type: string, example: '#100001' }
         company_id: { type: string }
@@ -123,12 +139,20 @@ paths:
   /meta/ticket-options:
     get:
       summary: List ticket form options
+      description: Requires `tickets:read` or `tickets:create`.
       responses:
         '200':
           description: Ticket statuses, priorities, projects, trackers, categories, tags, and custom fields.
+        '403':
+          description: Missing required ability.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /tickets:
     get:
       summary: List tickets visible to the API client tenant
+      description: Requires `tickets:read`. Ticket resources include `ticket_number` and `display_id`; route parameters remain the public `id`.
       parameters:
         - in: query
           name: status
@@ -139,8 +163,11 @@ paths:
       responses:
         '200':
           description: Paginated ticket resources.
+        '403':
+          description: Missing `tickets:read`.
     post:
       summary: Create a ticket
+      description: Requires `tickets:create`.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -158,7 +185,7 @@ paths:
   /tickets/bulk:
     patch:
       summary: Company-safe bulk ticket update
-      description: API clients can resolve or close tickets, change priority, and replace tags for tickets in their tenant.
+      description: Requires `tickets:bulk_update`. API clients can resolve or close tickets, change priority, and replace tags for tickets in their tenant.
       requestBody:
         required: true
         content:
@@ -171,6 +198,7 @@ paths:
   /tickets/{ticket}:
     get:
       summary: Show a ticket
+      description: Requires `tickets:read`. `{ticket}` is the public ticket `id`; `ticket_number` is returned for display/search only.
       parameters:
         - in: path
           name: ticket
@@ -182,6 +210,7 @@ paths:
   /tickets/{ticket}/comments:
     post:
       summary: Add a public ticket comment
+      description: Requires `tickets:comment`.
       parameters:
         - in: path
           name: ticket
@@ -202,7 +231,7 @@ paths:
   /tickets/{ticket}/attachments:
     post:
       summary: Upload a public ticket attachment
-      description: Uploads are limited by the configured attachment MIME, extension, and size allowlists.
+      description: Requires `tickets:comment`. Uploads are limited by the configured attachment MIME, extension, size allowlists, and optional ClamAV scan/quarantine.
       parameters:
         - in: path
           name: ticket
@@ -223,6 +252,7 @@ paths:
   /knowledge-base/categories:
     get:
       summary: List published public knowledge base categories
+      description: Requires `knowledge_base:read`.
       responses:
         '200':
           description: Category list.
@@ -238,6 +268,7 @@ paths:
   /knowledge-base/articles:
     get:
       summary: List published public knowledge base articles
+      description: Requires `knowledge_base:read`.
       parameters:
         - in: query
           name: search
@@ -251,6 +282,7 @@ paths:
   /knowledge-base/articles/{slug}:
     get:
       summary: Show a published public knowledge base article
+      description: Requires `knowledge_base:read`.
       parameters:
         - in: path
           name: slug
@@ -262,6 +294,7 @@ paths:
   /ticket-views:
     get:
       summary: List shared company ticket views
+      description: API ticket views are tenant-scoped shared views.
       responses:
         '200':
           description: Saved view list.
@@ -300,24 +333,63 @@ paths:
   /reports/tickets.csv:
     get:
       summary: Export visible tickets as CSV
+      description: Requires `reports:read`. Filters match ticket list semantics.
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: priority
+          schema: { type: string }
+        - in: query
+          name: project
+          schema: { type: string }
+        - in: query
+          name: tracker
+          schema: { type: string }
+        - in: query
+          name: tag
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: sla
+          schema: { type: string, enum: [first_response_breached, resolution_breached, breached, due_soon] }
       responses:
         '200':
           description: CSV file.
   /reports/tickets.pdf:
     get:
       summary: Export visible tickets as PDF
+      description: Requires `reports:read`. Supports the same filters as `/reports/tickets.csv`.
       responses:
         '200':
           description: PDF file.
   /reports/csat.csv:
     get:
       summary: Export visible CSAT surveys as CSV
+      description: Requires `reports:read`.
+      parameters:
+        - in: query
+          name: rating
+          schema: { type: integer, minimum: 1, maximum: 5 }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
       responses:
         '200':
           description: CSV file.
   /reports/csat.pdf:
     get:
       summary: Export visible CSAT surveys as PDF
+      description: Requires `reports:read`. Supports the same filters as `/reports/csat.csv`.
       responses:
         '200':
           description: PDF file.

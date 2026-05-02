@@ -51,6 +51,8 @@ class HandleInertiaRequests extends Middleware
                         'id' => $user->company->public_id,
                         'name' => $user->company->name,
                         'type' => $user->company->type->value,
+                        'timezone' => $user->company->timezone,
+                        'branding' => $user->company->settings['branding'] ?? null,
                     ] : null,
                     'roles' => $user->roles->pluck('name')->values(),
                     'permissions' => $user->getAllPermissions()->pluck('name')->values(),
@@ -80,6 +82,10 @@ class HandleInertiaRequests extends Middleware
                 'unread_count' => fn (): int => $user && $user->can('notifications.view')
                     ? $user->unreadNotifications()->count()
                     : 0,
+            ],
+            'app' => [
+                'locale' => app()->getLocale(),
+                'timezone' => $user?->company?->timezone ?? config('app.timezone'),
             ],
         ];
     }

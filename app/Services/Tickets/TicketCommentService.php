@@ -31,7 +31,7 @@ class TicketCommentService
     /**
      * @param  list<UploadedFile>  $files
      */
-    public function create(Ticket $ticket, User|ApiClient $actor, string $body, TicketVisibility $visibility, ?Request $request = null, array $files = [], array $mentionedUserIds = []): TicketComment
+    public function create(Ticket $ticket, User|ApiClient|null $actor, string $body, TicketVisibility $visibility, ?Request $request = null, array $files = [], array $mentionedUserIds = []): TicketComment
     {
         if ($actor instanceof ApiClient && $visibility !== TicketVisibility::Public) {
             throw new AuthorizationException('API clients can only create public comments.');
@@ -57,14 +57,14 @@ class TicketCommentService
                 'body' => $this->sanitizer->sanitize($body),
             ]);
 
-            $isCustomerSide = $actor instanceof ApiClient || ($actor instanceof User && $actor->isCustomerUser());
+            $isCustomerSide = $actor === null || $actor instanceof ApiClient || ($actor instanceof User && $actor->isCustomerUser());
 
             $ticket->forceFill([
                 'last_customer_activity_at' => $isCustomerSide ? now() : $ticket->last_customer_activity_at,
                 'last_agent_activity_at' => ! $isCustomerSide ? now() : $ticket->last_agent_activity_at,
             ])->save();
 
-            if ($isCustomerSide && $visibility === TicketVisibility::Public) {
+            if ($actor !== null && $isCustomerSide && $visibility === TicketVisibility::Public) {
                 $this->workflow->handleCustomerReply($ticket->refresh(), $actor, $request);
             }
 

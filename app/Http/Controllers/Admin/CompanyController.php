@@ -72,6 +72,7 @@ class CompanyController extends Controller
                 'type' => $company->type->value,
                 'status' => $company->status->value,
                 'timezone' => $company->timezone,
+                'settings' => $company->settings ?? [],
                 'users' => $company->users->map(fn ($user): array => [
                     'id' => $user->public_id,
                     'name' => $user->name,
@@ -118,5 +119,31 @@ class CompanyController extends Controller
         $policy->update($validated);
 
         return back()->with('success', 'SLA policy updated.');
+    }
+
+    public function updateBranding(Request $request, Company $company): RedirectResponse
+    {
+        $this->authorize('manage', Company::class);
+
+        $validated = $request->validate([
+            'display_name' => ['nullable', 'string', 'max:160'],
+            'logo_url' => ['nullable', 'url', 'max:2048'],
+            'brand_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'timezone' => ['required', 'timezone'],
+        ]);
+
+        $settings = $company->settings ?? [];
+        $settings['branding'] = [
+            'display_name' => $validated['display_name'] ?? null,
+            'logo_url' => $validated['logo_url'] ?? null,
+            'brand_color' => $validated['brand_color'] ?? null,
+        ];
+
+        $company->update([
+            'timezone' => $validated['timezone'],
+            'settings' => $settings,
+        ]);
+
+        return back()->with('success', 'Company branding updated.');
     }
 }

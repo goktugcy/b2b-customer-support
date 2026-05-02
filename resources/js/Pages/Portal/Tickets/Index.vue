@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { ref } from 'vue'
-import { Plus, Save, Search } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
+import { Plus, Save, Search, Star, Trash2, RefreshCw } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
@@ -60,6 +60,8 @@ const applyFilters = () => router.get(route('portal.tickets.index'), filter.data
 const selectedView = ref('')
 const viewForm = useForm({ name: '', filters: {}, is_shared: false, is_default: false })
 const filterKeys = ['search', 'queue', 'status', 'project', 'tracker', 'tag'] as const
+const selectedSavedView = computed(() => props.savedViews.find((item) => item.id === selectedView.value))
+const hasActiveFilters = computed(() => filterKeys.some((key) => Boolean(props.filters[key])))
 const applySavedView = () => {
   const view = props.savedViews.find((item) => item.id === selectedView.value)
   if (!view) return
@@ -73,6 +75,33 @@ const createSavedView = () => {
   viewForm.filters = filter.data()
   viewForm.post(route('portal.ticket-views.store'), { preserveScroll: true, onSuccess: () => viewForm.reset() })
 }
+const updateSavedView = () => {
+  if (!selectedSavedView.value) return
+  router.patch(route('portal.ticket-views.update', selectedSavedView.value.id), {
+    filters: filter.data(),
+    is_shared: selectedSavedView.value.is_shared,
+    is_default: selectedSavedView.value.is_default,
+  }, { preserveScroll: true })
+}
+const setDefaultView = () => {
+  if (!selectedSavedView.value) return
+  router.patch(route('portal.ticket-views.update', selectedSavedView.value.id), { is_default: true }, { preserveScroll: true })
+}
+const deleteSavedView = () => {
+  if (!selectedSavedView.value) return
+  router.delete(route('portal.ticket-views.destroy', selectedSavedView.value.id), {
+    preserveScroll: true,
+    onSuccess: () => { selectedView.value = '' },
+  })
+}
+
+onMounted(() => {
+  const defaultView = props.savedViews.find((view) => view.is_default)
+  if (defaultView && !hasActiveFilters.value) {
+    selectedView.value = defaultView.id
+    applySavedView()
+  }
+})
 </script>
 
 <template>
@@ -96,7 +125,11 @@ const createSavedView = () => {
           </Select>
           <Input v-model="viewForm.name" class="w-48" placeholder="New view name" />
           <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_shared" /> Share</label>
+          <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_default" /> Default</label>
           <Button size="sm" variant="secondary" :disabled="!viewForm.name" @click="createSavedView"><Save class="h-4 w-4" /> Save view</Button>
+          <Button size="sm" variant="secondary" :disabled="!selectedSavedView" @click="updateSavedView"><RefreshCw class="h-4 w-4" /> Update</Button>
+          <Button size="sm" variant="secondary" :disabled="!selectedSavedView || selectedSavedView.is_default" @click="setDefaultView"><Star class="h-4 w-4" /> Default</Button>
+          <Button size="sm" variant="ghost" :disabled="!selectedSavedView" @click="deleteSavedView"><Trash2 class="h-4 w-4" /></Button>
         </div>
         <div class="grid gap-3 md:grid-cols-6">
           <div class="relative md:col-span-2">
@@ -152,12 +185,20 @@ const createSavedView = () => {
                 <div class="mt-2 flex flex-wrap gap-1">
                   <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
                   <Badge v-if="ticket.sla === 'breached'" tone="red">SLA breached</Badge>
-                  <Badge v-for="tag in ticket.tags" :key="tag" tone="neutral">{{ tag }}</Badge>
                 </div>
               </TableCell>
               <TableCell class="text-muted-foreground">{{ ticket.project || '-' }}</TableCell>
-              <TableCell><Badge tone="blue">{{ ticket.status }}</Badge></TableCell>
-              <TableCell class="text-muted-foreground">{{ ticket.priority }}</TableCell>
+              <TableCell>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <Badge tone="blue">{{ ticket.status }}</Badge>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-muted-foreground">{{ ticket.priority }}</span>
+                  <Badge v-for="tag in ticket.tags" :key="tag" tone="neutral">{{ tag }}</Badge>
+                </div>
+              </TableCell>
               <TableCell class="text-muted-foreground">{{ ticket.assignee || 'Unassigned' }}</TableCell>
             </TableRow>
           </TableBody>

@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CsatController;
+use App\Http\Controllers\InboundEmailController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketAttachmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,7 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/attachments/{ticketAttachment}/download', [TicketAttachmentController::class, 'download'])->name('attachments.download');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -39,6 +41,9 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
 Route::get('/csat/{token}', [CsatController::class, 'show'])->name('csat.show');
 Route::post('/csat/{token}', [CsatController::class, 'submit'])->name('csat.submit');
 Route::get('/csat-thank-you', [CsatController::class, 'thankYou'])->name('csat.thank-you');
+Route::post('/inbound-email/{provider}', InboundEmailController::class)
+    ->middleware('throttle:api')
+    ->name('inbound-email');
 
 require __DIR__.'/admin.php';
 require __DIR__.'/portal.php';

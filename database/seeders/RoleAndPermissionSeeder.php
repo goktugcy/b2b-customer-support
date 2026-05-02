@@ -43,6 +43,7 @@ class RoleAndPermissionSeeder extends Seeder
         'api_tokens.manage',
         'webhooks.manage',
         'audit.view',
+        'automation.manage',
     ];
 
     public function run(): void
@@ -78,6 +79,7 @@ class RoleAndPermissionSeeder extends Seeder
             'canned_responses.manage',
             'reports.view',
             'csat.view',
+            'automation.manage',
         ]);
 
         Role::findOrCreate(RoleName::CustomerAdmin->value, self::GUARD)->syncPermissions([

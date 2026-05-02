@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\WebhookDeliveryStatus;
 use App\Enums\WebhookEndpointStatus;
+use App\Events\WebhookDeliveryUpdated;
 use App\Models\WebhookDelivery;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -40,7 +41,7 @@ class SendWebhookDelivery implements ShouldQueue
                 'User-Agent' => config('app.name', 'Support Platform').'/webhooks',
                 'Content-Type' => 'application/json',
                 'X-Support-Event' => $this->delivery->event_type,
-                'X-Support-Delivery' => (string) $this->delivery->id,
+                'X-Support-Delivery' => $this->delivery->public_id,
                 'X-Support-Timestamp' => $timestamp,
                 'X-Support-Signature' => 'sha256='.$signature,
             ])
@@ -54,6 +55,7 @@ class SendWebhookDelivery implements ShouldQueue
             'delivered_at' => $response->successful() ? now() : null,
             'next_attempt_at' => $response->successful() ? null : now()->addMinutes(15),
         ])->save();
+        WebhookDeliveryUpdated::dispatch($this->delivery->refresh());
 
         $this->delivery->endpoint->forceFill([
             'failure_count' => $response->successful() ? 0 : $this->delivery->endpoint->failure_count + 1,
@@ -77,5 +79,6 @@ class SendWebhookDelivery implements ShouldQueue
             'response_body_excerpt' => $exception?->getMessage(),
             'next_attempt_at' => now()->addMinutes(15),
         ])->save();
+        WebhookDeliveryUpdated::dispatch($this->delivery->refresh());
     }
 }

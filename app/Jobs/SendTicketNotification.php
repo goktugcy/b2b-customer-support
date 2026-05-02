@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\UserNotificationUpdated;
 use App\Models\Ticket;
 use App\Models\TicketWatcher;
 use App\Models\User;
@@ -33,6 +34,7 @@ class SendTicketNotification implements ShouldQueue
         $users = $recipients->recipients($ticket, $this->event, $subjectUser);
 
         Notification::send($users, new TicketUpdatedNotification($ticket, $this->event, $subjectUser));
+        $users->each(fn (User $user) => UserNotificationUpdated::dispatch($user));
 
         if ($this->event === 'ticket.watcher_added' && $subjectUser) {
             TicketWatcher::query()

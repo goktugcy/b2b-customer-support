@@ -32,7 +32,7 @@ class TicketCreationService
     /**
      * @param  array{company_id:int, subject:string, description:string, priority?:string|TicketPriority|null, assigned_to_user_id?:int|null, target_department_ids?:list<string>, target_user_ids?:list<string>, attachments?:list<UploadedFile>, project_id?:string|null, tracker_id?:string|null, category_id?:string|null, tag_names?:list<string>, custom_fields?:array<string, mixed>}  $data
      */
-    public function create(array $data, User|ApiClient $actor, TicketSource $source, ?Request $request = null): Ticket
+    public function create(array $data, User|ApiClient|null $actor, TicketSource $source, ?Request $request = null): Ticket
     {
         return DB::transaction(function () use ($data, $actor, $source, $request): Ticket {
             $isUser = $actor instanceof User;

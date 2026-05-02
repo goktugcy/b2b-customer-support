@@ -22,6 +22,16 @@ Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, San
 - Provider ticket merge and split workflows with ticket events and audit logs
 - CSAT surveys sent on first resolution, with single-use token responses
 - Synchronous CSV/PDF exports for ticket and CSAT reports
+- Async report center with queued CSV/PDF exports, history, status, download, and errors
+- Knowledge base v2 with category hierarchy, article edit/delete, version history, and portal helpful feedback
+- Provider automation rules with trigger/condition/action execution logs
+- Provider-agnostic inbound email webhook for Mailgun/Postmark/SendGrid/generic payloads with `Message-Id` dedupe
+- Laravel Reverb/Echo private channels for live notification, ticket, report export, and webhook delivery updates
+- Global header search across tickets, comments, companies, users, and knowledge base with tenant scoping
+- CSAT resend/reminder support plus summary metrics on reports
+- Webhook public delivery IDs, payload viewer, custom test payloads, audit filters/detail/CSV export
+- Optional ClamAV attachment scan/quarantine fields and blocked download for quarantined files
+- Portal branding settings and user notification delivery preferences
 
 ## Setup
 
@@ -40,7 +50,7 @@ Create or update a provider admin:
 php artisan support:create-provider-admin admin@example.com --password=password
 ```
 
-Run the local app, queue workers, logs, and Vite:
+Run the local app, queue workers, Reverb, logs, and Vite:
 
 ```bash
 composer run dev
@@ -54,7 +64,7 @@ SLA breaches are marked by the scheduled command:
 php artisan support:check-sla-breaches
 ```
 
-In production, run Laravel's scheduler every minute and keep queue workers alive for the `notifications` and `webhooks` queues.
+In production, run Laravel's scheduler every minute and keep queue workers alive for the `notifications`, `webhooks`, `reports`, and `automation` queues. Start Reverb when `BROADCAST_CONNECTION=reverb`.
 
 Attachment upload validation is configured with:
 
@@ -62,7 +72,33 @@ Attachment upload validation is configured with:
 SUPPORT_ATTACHMENT_MAX_KB=20480
 SUPPORT_ATTACHMENT_ALLOWED_MIMES=text/plain,text/csv,application/pdf,image/png,image/jpeg,image/gif,application/zip,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 SUPPORT_ATTACHMENT_ALLOWED_EXTENSIONS=txt,csv,pdf,png,jpg,jpeg,gif,zip,json,docx,xlsx
+CLAMAV_ENABLED=false
+CLAMAV_HOST=127.0.0.1
+CLAMAV_PORT=3310
 ```
+
+Inbound email webhooks are available at:
+
+```text
+POST /inbound-email/{mailgun|postmark|sendgrid|generic}
+```
+
+Set `INBOUND_EMAIL_SECRET` to require `X-Support-Inbound-Secret`. Messages are matched by company payload/default company, sender email, and ticket numbers like `#100001`.
+
+Reverb local configuration:
+
+```env
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=local
+REVERB_APP_KEY=local
+REVERB_APP_SECRET=local
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
+VITE_REVERB_ENABLED=true
+```
+
+Keep `VITE_REVERB_ENABLED=false` unless `php artisan reverb:start` is running; otherwise the browser will try to connect to port `8080`.
 
 ## API
 
@@ -72,7 +108,7 @@ The OpenAPI description is available at [docs/openapi.yaml](docs/openapi.yaml).
 
 Ticket creation supports an optional `Idempotency-Key` header. Reusing a key with the same body returns the stored response; reusing it with a different body returns a validation error.
 
-Default API token abilities now include ticket creation/read/comment, attachment upload, public knowledge base read, company-safe bulk ticket updates, report exports, and CSAT writes.
+Default API token abilities now include ticket creation/read/comment, attachment upload, public knowledge base read, company-safe bulk ticket updates, report exports, and CSAT writes. `/api/v1/meta/ticket-options` requires either `tickets:read` or `tickets:create`.
 
 Webhook deliveries are signed with:
 
@@ -93,4 +129,4 @@ npm run build
 
 ## Roadmap
 
-The major production workflow roadmap is implemented. Future work can focus on async report scheduling, richer article approval workflows, and provider-facing API clients for operational actions.
+The current production workflow roadmap is implemented. Future work can focus on report scheduling, richer article approval workflows, provider-facing API clients for operational actions, and deeper full-text search ranking.

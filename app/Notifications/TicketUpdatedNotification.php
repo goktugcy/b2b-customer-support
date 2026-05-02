@@ -20,7 +20,19 @@ class TicketUpdatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        if (! $notifiable instanceof User) {
+            return ['mail', 'database'];
+        }
+
+        $preference = $notifiable->notificationPreference;
+        $eventSettings = $preference?->event_settings[$this->event] ?? [];
+        $databaseEnabled = $eventSettings['database'] ?? $preference?->database_enabled ?? true;
+        $mailEnabled = $eventSettings['mail'] ?? $preference?->mail_enabled ?? true;
+
+        return array_values(array_filter([
+            $mailEnabled ? 'mail' : null,
+            $databaseEnabled ? 'database' : null,
+        ]));
     }
 
     public function toMail(object $notifiable): MailMessage
