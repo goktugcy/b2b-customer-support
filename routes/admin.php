@@ -23,16 +23,21 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
         Route::get('/', fn () => redirect()->route('admin.home'))->name('dashboard');
 
         Route::patch('tickets/bulk', TicketBulkController::class)->name('tickets.bulk');
-        Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show', 'update']);
-        Route::patch('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
-        Route::patch('tickets/{ticket}/assignment', [TicketController::class, 'assign'])->name('tickets.assignment');
-        Route::patch('tickets/{ticket}/targets', [TicketController::class, 'updateTargets'])->name('tickets.targets');
-        Route::post('tickets/{ticket}/merge', [TicketMergeSplitController::class, 'merge'])->name('tickets.merge');
-        Route::post('tickets/{ticket}/split', [TicketMergeSplitController::class, 'split'])->name('tickets.split');
-        Route::post('tickets/{ticket}/watchers', [TicketController::class, 'addWatcher'])->name('tickets.watchers.store');
-        Route::delete('tickets/{ticket}/watchers/{user}', [TicketController::class, 'removeWatcher'])->name('tickets.watchers.destroy');
-        Route::post('tickets/{ticket}/attachments', [TicketController::class, 'attachment'])->name('tickets.attachments.store');
-        Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment'])->name('tickets.comments.store');
+        Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store']);
+        Route::scopeBindings()->group(function (): void {
+            Route::get('companies/{company:slug}/tickets/{ticket:ticket_number}', [TicketController::class, 'show'])->whereNumber('ticket')->name('tickets.show');
+            Route::patch('companies/{company:slug}/tickets/{ticket:ticket_number}', [TicketController::class, 'update'])->whereNumber('ticket')->name('tickets.update');
+            Route::patch('companies/{company:slug}/tickets/{ticket:ticket_number}/status', [TicketController::class, 'changeStatus'])->whereNumber('ticket')->name('tickets.status');
+            Route::patch('companies/{company:slug}/tickets/{ticket:ticket_number}/assignment', [TicketController::class, 'assign'])->whereNumber('ticket')->name('tickets.assignment');
+            Route::patch('companies/{company:slug}/tickets/{ticket:ticket_number}/targets', [TicketController::class, 'updateTargets'])->whereNumber('ticket')->name('tickets.targets');
+            Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/merge', [TicketMergeSplitController::class, 'merge'])->whereNumber('ticket')->name('tickets.merge');
+            Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/split', [TicketMergeSplitController::class, 'split'])->whereNumber('ticket')->name('tickets.split');
+            Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/watchers', [TicketController::class, 'addWatcher'])->whereNumber('ticket')->name('tickets.watchers.store');
+            Route::delete('companies/{company:slug}/tickets/{ticket:ticket_number}/watchers/{user}', [TicketController::class, 'removeWatcher'])->whereNumber('ticket')->name('tickets.watchers.destroy');
+            Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/attachments', [TicketController::class, 'attachment'])->whereNumber('ticket')->name('tickets.attachments.store');
+            Route::post('companies/{company:slug}/tickets/{ticket:ticket_number}/comments', [TicketController::class, 'comment'])->whereNumber('ticket')->name('tickets.comments.store');
+        });
+        Route::get('tickets/{ticket}', [TicketController::class, 'legacyShow'])->name('tickets.legacy-show');
         Route::post('ticket-views', [TicketSavedViewController::class, 'store'])->name('ticket-views.store');
         Route::patch('ticket-views/{ticketView}', [TicketSavedViewController::class, 'update'])->name('ticket-views.update');
         Route::delete('ticket-views/{ticketView}', [TicketSavedViewController::class, 'destroy'])->name('ticket-views.destroy');

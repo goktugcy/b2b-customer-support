@@ -27,7 +27,9 @@ class DashboardMetricsService
                 ->map(fn (TicketEvent $event): array => [
                     'id' => $event->id,
                     'type' => $event->event_type,
-                    'ticket_id' => $event->ticket?->public_id,
+                    'ticket_id' => $event->ticket?->displayId(),
+                    'ticket_number' => $event->ticket?->ticket_number,
+                    'ticket_url' => $event->ticket ? route('admin.tickets.show', $event->ticket->adminRouteParameters()) : null,
                     'ticket' => $event->ticket?->subject,
                     'company' => $event->ticket?->company?->name,
                     'actor' => $event->actor?->name ?? $event->apiClient?->name ?? 'System',
@@ -51,6 +53,10 @@ class DashboardMetricsService
                 ->get()
                 ->map(fn (Ticket $ticket): array => [
                     'id' => $ticket->public_id,
+                    'ticket_number' => $ticket->ticket_number,
+                    'display_id' => $ticket->displayId(),
+                    'route_params' => $ticket->portalRouteParameters(),
+                    'url' => route('portal.tickets.show', $ticket->portalRouteParameters()),
                     'subject' => $ticket->subject,
                     'status' => $ticket->status->value,
                     'priority' => $ticket->priority->value,

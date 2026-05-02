@@ -25,6 +25,9 @@ type Person = { id: string; name: string; side?: string }
 
 type Ticket = {
   id: string
+  ticket_number: number
+  display_id: string
+  route_params: { ticket: number }
   subject: string
   description: string
   status: string
@@ -57,8 +60,10 @@ const attachmentForm = useForm({ attachments: [] as File[] })
 const watcherOptions = computed(() => props.watcherUsers.filter((user) => !props.ticket.watchers.some((watcher) => watcher.id === user.id)))
 const commentAttachmentErrors = computed(() => form.errors.attachments || Object.entries(form.errors).find(([key]) => key.startsWith('attachments.'))?.[1])
 const attachmentUploadError = ref('')
+const ticketRoute = computed(() => props.ticket.route_params)
+const pageTitle = computed(() => `${props.ticket.display_id} · ${props.ticket.subject}`)
 
-const submit = () => form.post(route('portal.tickets.comments.store', props.ticket.id), {
+const submit = () => form.post(route('portal.tickets.comments.store', ticketRoute.value), {
   preserveScroll: true,
   forceFormData: true,
   onSuccess: () => {
@@ -68,22 +73,22 @@ const submit = () => form.post(route('portal.tickets.comments.store', props.tick
   },
 })
 
-const changeStatus = () => statusForm.patch(route('portal.tickets.status', props.ticket.id), { preserveScroll: true })
+const changeStatus = () => statusForm.patch(route('portal.tickets.status', ticketRoute.value), { preserveScroll: true })
 
-const addWatcher = () => watcherForm.post(route('portal.tickets.watchers.store', props.ticket.id), {
+const addWatcher = () => watcherForm.post(route('portal.tickets.watchers.store', ticketRoute.value), {
   preserveScroll: true,
   onSuccess: () => watcherForm.reset(),
 })
 
 const removeWatcher = (userId: string) => {
-  router.delete(route('portal.tickets.watchers.destroy', [props.ticket.id, userId]), { preserveScroll: true })
+  router.delete(route('portal.tickets.watchers.destroy', { ...ticketRoute.value, user: userId }), { preserveScroll: true })
 }
 
 const uploadAttachments = () => {
   attachmentUploadError.value = ''
 
   attachmentForm.attachments.forEach((file) => {
-    router.post(route('portal.tickets.attachments.store', props.ticket.id), { file }, {
+    router.post(route('portal.tickets.attachments.store', ticketRoute.value), { file }, {
       preserveScroll: true,
       forceFormData: true,
       onSuccess: () => {
@@ -98,7 +103,7 @@ const uploadAttachments = () => {
 </script>
 
 <template>
-  <PortalLayout :title="ticket.subject">
+  <PortalLayout :title="pageTitle">
     <Link :href="route('portal.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
       <ArrowLeft class="h-4 w-4" />
       Back to tickets
@@ -108,7 +113,7 @@ const uploadAttachments = () => {
         <Card>
           <CardHeader>
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle class="text-xl">{{ ticket.subject }}</CardTitle>
+              <CardTitle class="text-xl">{{ ticket.display_id }} · {{ ticket.subject }}</CardTitle>
               <div class="flex gap-2"><Badge tone="blue">{{ ticket.status }}</Badge><Badge>{{ ticket.priority }}</Badge></div>
             </div>
           </CardHeader>
@@ -148,6 +153,7 @@ const uploadAttachments = () => {
       <div class="space-y-4 lg:sticky lg:top-20 lg:self-start">
         <CollapsibleMetaBox title="Ticket details">
             <dl class="space-y-3 text-sm">
+              <div><dt class="text-muted-foreground">Ticket ID</dt><dd class="font-medium">{{ ticket.display_id }}</dd></div>
               <div><dt class="text-muted-foreground">Assignee</dt><dd class="font-medium">{{ ticket.assignee || 'Unassigned' }}</dd></div>
               <div><dt class="text-muted-foreground">Project</dt><dd class="font-medium">{{ ticket.project || '-' }}</dd></div>
               <div><dt class="text-muted-foreground">Tracker</dt><dd class="font-medium">{{ ticket.tracker || '-' }}</dd></div>

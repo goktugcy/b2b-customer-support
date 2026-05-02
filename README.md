@@ -12,7 +12,8 @@ Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, San
 - Invitation revoke/resend and user role/status management
 - Webhook delivery visibility, test delivery, manual retry, and secret rotation
 - API v1 ticket endpoints with idempotent ticket creation and OpenAPI documentation
-- Database + mail notification center with read/unread state
+- Company-scoped human ticket numbers such as `#100001`, with numeric portal/admin ticket URLs and legacy public-id redirects
+- Database + mail notification center with header inbox dropdown, read/unread filters, and a full notifications archive
 - Personal and shared saved ticket views for admin and portal ticket lists
 - Provider bulk ticket actions for status, assignment, priority, and tags
 - Public knowledge base for portal/API clients plus provider-managed internal content

@@ -40,6 +40,8 @@ class CsatSurveyNotification extends Notification
         return [
             'event' => 'ticket.csat.sent',
             'ticket_id' => $ticket->public_id,
+            'ticket_number' => $ticket->ticket_number,
+            'display_id' => $ticket->displayId(),
             'ticket_subject' => $ticket->subject,
             'survey_id' => $this->survey->public_id,
             'message' => 'Your ticket was resolved. Please rate your support experience.',

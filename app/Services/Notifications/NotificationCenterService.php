@@ -3,6 +3,7 @@
 namespace App\Services\Notifications;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class NotificationCenterService
@@ -12,6 +13,15 @@ class NotificationCenterService
         return $user->notifications()
             ->latest()
             ->paginate($perPage);
+    }
+
+    public function latestForUser(User $user, string $filter = 'all', int $limit = 20): Collection
+    {
+        return $user->notifications()
+            ->when($filter === 'unread', fn ($query) => $query->whereNull('read_at'))
+            ->latest()
+            ->limit(min(max($limit, 1), 50))
+            ->get();
     }
 
     public function unreadCount(User $user): int

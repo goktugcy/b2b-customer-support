@@ -24,6 +24,9 @@ import type { CategoryOption, Paginated, ProjectOption, SelectOption, TagOption,
 
 type TicketRow = {
   id: string
+  ticket_number: number
+  display_id: string
+  url: string
   subject: string
   status: string
   priority: string
@@ -145,7 +148,7 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
         <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-9">
           <div class="relative md:col-span-2 xl:col-span-2">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input v-model="filter.search" class="pl-9" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+            <Input v-model="filter.search" class="pl-9" placeholder="Search #100001, subject, company" @keydown.enter.prevent="applyFilters" />
           </div>
           <Select v-model="filter.queue" @change="applyFilters">
             <option value="">All queues</option>
@@ -224,8 +227,9 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
             <TableRow v-for="ticket in tickets.data" :key="ticket.id">
               <TableCell><Checkbox v-model="selectedIds" :value="ticket.id" /></TableCell>
               <TableCell>
-                <Link :href="route('admin.tickets.show', ticket.id)" class="font-medium text-foreground transition-colors hover:text-primary">
-                  {{ ticket.subject }}
+                <Link :href="ticket.url" class="group inline-flex min-w-0 flex-col transition-colors hover:text-primary">
+                  <span class="text-xs font-semibold text-primary">{{ ticket.display_id }}</span>
+                  <span class="truncate font-medium text-foreground group-hover:text-primary">{{ ticket.subject }}</span>
                 </Link>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>

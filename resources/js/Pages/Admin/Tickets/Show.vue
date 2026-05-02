@@ -29,6 +29,9 @@ type Person = { id: string; name: string; side?: string }
 
 type TicketDetail = {
   id: string
+  ticket_number: number
+  display_id: string
+  route_params: { company: string; ticket: number }
   subject: string
   description: string
   status: string
@@ -101,6 +104,8 @@ const selectedCustomFields = computed(() => props.customFields.filter((field) =>
 const commentAttachmentErrors = computed(() => commentForm.errors.attachments || Object.entries(commentForm.errors).find(([key]) => key.startsWith('attachments.'))?.[1])
 const attachmentUploadError = ref('')
 const currentMentionOptions = computed(() => commentForm.visibility === 'internal' ? props.mentionableUsers.internal : props.mentionableUsers.public)
+const ticketRoute = computed(() => props.ticket.route_params)
+const pageTitle = computed(() => `${props.ticket.display_id} · ${props.ticket.subject}`)
 
 watch(() => editForm.project_id, () => {
   if (!filteredCategories.value.some((category) => category.id === editForm.category_id)) {
@@ -108,12 +113,12 @@ watch(() => editForm.project_id, () => {
   }
 })
 
-const updateTicket = () => editForm.patch(route('admin.tickets.update', props.ticket.id), { preserveScroll: true })
-const changeStatus = () => statusForm.patch(route('admin.tickets.status', props.ticket.id), { preserveScroll: true })
-const assignTicket = () => assignForm.patch(route('admin.tickets.assignment', props.ticket.id), { preserveScroll: true })
-const updateTargets = () => targetForm.patch(route('admin.tickets.targets', props.ticket.id), { preserveScroll: true })
+const updateTicket = () => editForm.patch(route('admin.tickets.update', ticketRoute.value), { preserveScroll: true })
+const changeStatus = () => statusForm.patch(route('admin.tickets.status', ticketRoute.value), { preserveScroll: true })
+const assignTicket = () => assignForm.patch(route('admin.tickets.assignment', ticketRoute.value), { preserveScroll: true })
+const updateTargets = () => targetForm.patch(route('admin.tickets.targets', ticketRoute.value), { preserveScroll: true })
 
-const addComment = () => commentForm.post(route('admin.tickets.comments.store', props.ticket.id), {
+const addComment = () => commentForm.post(route('admin.tickets.comments.store', ticketRoute.value), {
   preserveScroll: true,
   forceFormData: true,
   onSuccess: () => {
@@ -123,13 +128,13 @@ const addComment = () => commentForm.post(route('admin.tickets.comments.store', 
   },
 })
 
-const addWatcher = () => watcherForm.post(route('admin.tickets.watchers.store', props.ticket.id), {
+const addWatcher = () => watcherForm.post(route('admin.tickets.watchers.store', ticketRoute.value), {
   preserveScroll: true,
   onSuccess: () => watcherForm.reset(),
 })
 
 const removeWatcher = (userId: string) => {
-  router.delete(route('admin.tickets.watchers.destroy', [props.ticket.id, userId]), { preserveScroll: true })
+  router.delete(route('admin.tickets.watchers.destroy', { ...ticketRoute.value, user: userId }), { preserveScroll: true })
 }
 
 const applyCannedResponse = () => {
@@ -139,14 +144,14 @@ const applyCannedResponse = () => {
   }
 }
 
-const mergeTicket = () => mergeForm.post(route('admin.tickets.merge', props.ticket.id), { preserveScroll: true })
-const splitTicket = () => splitForm.post(route('admin.tickets.split', props.ticket.id), { preserveScroll: true })
+const mergeTicket = () => mergeForm.post(route('admin.tickets.merge', ticketRoute.value), { preserveScroll: true })
+const splitTicket = () => splitForm.post(route('admin.tickets.split', ticketRoute.value), { preserveScroll: true })
 
 const uploadAttachments = () => {
   attachmentUploadError.value = ''
 
   attachmentForm.attachments.forEach((file) => {
-    router.post(route('admin.tickets.attachments.store', props.ticket.id), {
+    router.post(route('admin.tickets.attachments.store', ticketRoute.value), {
       file,
       visibility: attachmentForm.visibility,
     }, {
@@ -164,7 +169,7 @@ const uploadAttachments = () => {
 </script>
 
 <template>
-  <AdminLayout :title="ticket.subject">
+  <AdminLayout :title="pageTitle">
     <div class="mb-2">
       <Link :href="route('admin.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
         <ArrowLeft class="h-4 w-4" />
@@ -178,7 +183,7 @@ const uploadAttachments = () => {
           <CardHeader>
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <CardTitle class="text-xl">{{ ticket.subject }}</CardTitle>
+                <CardTitle class="text-xl">{{ ticket.display_id }} · {{ ticket.subject }}</CardTitle>
                 <p class="mt-1 text-sm text-muted-foreground">{{ ticket.company }} · {{ ticket.project || 'General' }} · {{ ticket.requester || 'No requester' }}</p>
               </div>
               <div class="flex gap-2">
@@ -260,6 +265,10 @@ const uploadAttachments = () => {
       <div class="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <CollapsibleMetaBox title="Details">
             <form class="space-y-3" @submit.prevent="updateTicket">
+              <div class="rounded-md border bg-muted/40 px-3 py-2">
+                <p class="text-xs font-medium uppercase text-muted-foreground">Ticket ID</p>
+                <p class="mt-1 text-sm font-semibold">{{ ticket.display_id }}</p>
+              </div>
               <div>
                 <Label>Subject</Label>
                 <Input v-model="editForm.subject" class="mt-1" />
@@ -325,7 +334,7 @@ const uploadAttachments = () => {
         <CollapsibleMetaBox title="Merge / split" :default-open="false" content-class="space-y-4">
             <form class="space-y-2" @submit.prevent="mergeTicket">
               <Label>Merge into ticket ID</Label>
-              <Input v-model="mergeForm.target_ticket_id" placeholder="01H..." />
+              <Input v-model="mergeForm.target_ticket_id" placeholder="#100001 or 100001" />
               <Button type="submit" class="w-full" variant="secondary" :disabled="!mergeForm.target_ticket_id">Merge ticket</Button>
             </form>
             <form class="space-y-2 border-t pt-4" @submit.prevent="splitTicket">

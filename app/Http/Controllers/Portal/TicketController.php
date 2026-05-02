@@ -41,11 +41,18 @@ class TicketController extends Controller
                 ->visibleTo($request->user())
                 ->with(['assignee', 'supportProject', 'tracker', 'category', 'tags'])
                 ->when($request->string('search')->isNotEmpty(), function ($query) use ($request): void {
-                    $search = '%'.$request->string('search')->toString().'%';
-                    $query->where(function ($inner) use ($search): void {
+                    $rawSearch = $request->string('search')->toString();
+                    $search = '%'.$rawSearch.'%';
+                    $ticketNumber = ltrim($rawSearch, '#');
+
+                    $query->where(function ($inner) use ($search, $ticketNumber): void {
                         $inner->where('subject', 'like', $search)
                             ->orWhere('description', 'like', $search)
                             ->orWhereHas('tags', fn ($tag) => $tag->where('name', 'like', $search));
+
+                        if (ctype_digit($ticketNumber)) {
+                            $inner->orWhere('ticket_number', (int) $ticketNumber);
+                        }
                     });
                 })
                 ->when($request->string('queue')->isNotEmpty(), fn ($query) => $this->applyQueueFilter($query, $request->string('queue')->toString(), $request))
@@ -58,6 +65,10 @@ class TicketController extends Controller
                 ->withQueryString()
                 ->through(fn (Ticket $ticket): array => [
                     'id' => $ticket->public_id,
+                    'ticket_number' => $ticket->ticket_number,
+                    'display_id' => $ticket->displayId(),
+                    'route_params' => $ticket->portalRouteParameters(),
+                    'url' => route('portal.tickets.show', $ticket->portalRouteParameters()),
                     'subject' => $ticket->subject,
                     'status' => $ticket->status->value,
                     'priority' => $ticket->priority->value,
@@ -112,12 +123,17 @@ class TicketController extends Controller
             'attachments' => (array) $request->file('attachments', []),
         ], $request->user(), TicketSource::Portal, $request);
 
-        return redirect()->route('portal.tickets.show', $ticket)->with('success', 'Ticket created.');
+        return redirect()->route('portal.tickets.show', $ticket->portalRouteParameters())->with('success', 'Ticket created.');
     }
 
-    public function show(Request $request, Ticket $ticket, TicketWorkflowService $workflow, MentionParserService $mentions): Response
+    public function show(Request $request, string $ticket, TicketWorkflowService $workflow, MentionParserService $mentions): Response|RedirectResponse
     {
+        $ticket = $this->resolveTicketForUser($request, $ticket);
         $this->authorize('view', $ticket);
+
+        if (! ctype_digit((string) $request->route('ticket'))) {
+            return redirect()->route('portal.tickets.show', $ticket->portalRouteParameters());
+        }
 
         $ticket->load([
             'assignee',
@@ -141,6 +157,9 @@ class TicketController extends Controller
         return Inertia::render('Portal/Tickets/Show', [
             'ticket' => [
                 'id' => $ticket->public_id,
+                'ticket_number' => $ticket->ticket_number,
+                'display_id' => $ticket->displayId(),
+                'route_params' => $ticket->portalRouteParameters(),
                 'subject' => $ticket->subject,
                 'description' => $ticket->description,
                 'status' => $ticket->status->value,
@@ -203,6 +222,22 @@ class TicketController extends Controller
                 ->map(fn (User $user): array => ['id' => $user->public_id, 'name' => $user->name]),
             'mentionableUsers' => $mentions->mentionableUsers($ticket, TicketVisibility::Public),
         ]);
+    }
+
+    private function resolveTicketForUser(Request $request, string $identifier): Ticket
+    {
+        $normalized = ltrim($identifier, '#');
+
+        return Ticket::query()
+            ->where('company_id', $request->user()->company_id)
+            ->where(function ($query) use ($identifier, $normalized): void {
+                if (ctype_digit($normalized)) {
+                    $query->where('ticket_number', (int) $normalized);
+                }
+
+                $query->orWhere('public_id', $identifier);
+            })
+            ->firstOrFail();
     }
 
     public function comment(StoreTicketCommentRequest $request, Ticket $ticket, TicketCommentService $comments): RedirectResponse

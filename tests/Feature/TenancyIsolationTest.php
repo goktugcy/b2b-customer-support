@@ -26,15 +26,17 @@ class TenancyIsolationTest extends TestCase
         $userA->assignRole(RoleName::CustomerUser->value);
 
         $ticketA = Ticket::factory()->create(['company_id' => $companyA->id]);
+        Ticket::factory()->create(['company_id' => $companyB->id]);
         $ticketB = Ticket::factory()->create(['company_id' => $companyB->id]);
 
         $this->actingAs($userA)
-            ->get(route('portal.tickets.show', $ticketA))
-            ->assertOk();
+            ->get(route('portal.tickets.show', $ticketA->portalRouteParameters()))
+            ->assertOk()
+            ->assertSee($ticketA->subject);
 
         $this->actingAs($userA)
-            ->get(route('portal.tickets.show', $ticketB))
-            ->assertForbidden();
+            ->get(route('portal.tickets.show', $ticketB->portalRouteParameters()))
+            ->assertNotFound();
 
         $this->actingAs($userA)
             ->get(route('admin.tickets.index'))
@@ -53,7 +55,7 @@ class TenancyIsolationTest extends TestCase
         $ticket = Ticket::factory()->create(['company_id' => $client->id]);
 
         $this->actingAs($providerUser)
-            ->get(route('admin.tickets.show', $ticket))
+            ->get(route('admin.tickets.show', $ticket->adminRouteParameters()))
             ->assertOk();
     }
 }

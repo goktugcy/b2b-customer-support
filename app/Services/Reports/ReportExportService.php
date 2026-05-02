@@ -24,7 +24,7 @@ class ReportExportService
                 ->with(['company', 'assignee'])
                 ->each(function (Ticket $ticket) use ($handle): void {
                     fputcsv($handle, [
-                        $ticket->public_id,
+                        $ticket->displayId(),
                         $ticket->company?->name,
                         $ticket->subject,
                         $ticket->status->value,
@@ -49,7 +49,7 @@ class ReportExportService
                 ->each(function (TicketCsatSurvey $survey) use ($handle): void {
                     fputcsv($handle, [
                         $survey->public_id,
-                        $survey->ticket?->public_id,
+                        $survey->ticket?->displayId(),
                         $survey->ticket?->subject,
                         $survey->rating,
                         $survey->comment,
@@ -107,7 +107,7 @@ class ReportExportService
     {
         $rows = $tickets->map(fn (Ticket $ticket): string => sprintf(
             '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
-            e($ticket->public_id),
+            e($ticket->displayId()),
             e($ticket->company?->name ?? ''),
             e($ticket->subject),
             e($ticket->status->value),
@@ -122,7 +122,7 @@ class ReportExportService
         $rows = $surveys->map(fn (TicketCsatSurvey $survey): string => sprintf(
             '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
             e($survey->public_id),
-            e($survey->ticket?->subject ?? ''),
+            e(($survey->ticket?->displayId() ?? '').' '.$survey->ticket?->subject),
             e((string) $survey->rating),
             e($survey->comment ?? ''),
         ))->implode('');

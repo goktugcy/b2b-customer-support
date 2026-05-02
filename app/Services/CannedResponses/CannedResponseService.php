@@ -76,7 +76,8 @@ class CannedResponseService
         $ticket->loadMissing(['company', 'requester', 'assignee']);
 
         $variables = [
-            'ticket.id' => $ticket->public_id,
+            'ticket.id' => $ticket->displayId(),
+            'ticket.number' => (string) $ticket->ticket_number,
             'ticket.subject' => $ticket->subject,
             'company.name' => $ticket->company?->name ?? '',
             'requester.name' => $ticket->requester?->name ?? '',

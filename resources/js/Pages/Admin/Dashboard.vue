@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3'
 import { Activity, BarChart3, Clock3 } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
@@ -12,7 +13,7 @@ type Metrics = {
   summary: Record<string, number>
   by_status: Record<string, number>
   by_priority: Record<string, number>
-  recent_events: { id: number; type: string; ticket_id?: string; ticket?: string; company?: string; actor: string; occurred_at?: string }[]
+  recent_events: { id: number; type: string; ticket_id?: string; ticket_url?: string | null; ticket?: string; company?: string; actor: string; occurred_at?: string }[]
 }
 
 defineProps<{ metrics: Metrics }>()
@@ -99,7 +100,13 @@ const percentage = (items: Record<string, number>, value: number) => {
           <div v-for="event in metrics.recent_events" :key="event.id" class="flex gap-3 py-3 text-sm first:pt-0 last:pb-0">
             <span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
             <div class="min-w-0">
-              <p class="font-medium">{{ label(event.type) }} · {{ event.ticket || 'Ticket' }}</p>
+              <p class="font-medium">
+                {{ label(event.type) }} ·
+                <Link v-if="event.ticket_url" :href="event.ticket_url" class="transition-colors hover:text-primary">
+                  {{ event.ticket_id || 'Ticket' }} · {{ event.ticket || 'Ticket' }}
+                </Link>
+                <span v-else>{{ event.ticket_id || 'Ticket' }} · {{ event.ticket || 'Ticket' }}</span>
+              </p>
               <p class="text-muted-foreground">{{ event.company || 'Company' }} · {{ event.actor }} · {{ event.occurred_at }}</p>
             </div>
           </div>

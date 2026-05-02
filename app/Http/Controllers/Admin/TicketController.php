@@ -48,12 +48,19 @@ class TicketController extends Controller
             ->visibleTo($request->user())
             ->with(['company', 'assignee', 'supportProject', 'tracker', 'category', 'tags'])
             ->when($request->string('search')->isNotEmpty(), function ($query) use ($request): void {
-                $search = '%'.$request->string('search')->toString().'%';
-                $query->where(function ($inner) use ($search): void {
+                $rawSearch = $request->string('search')->toString();
+                $search = '%'.$rawSearch.'%';
+                $ticketNumber = ltrim($rawSearch, '#');
+
+                $query->where(function ($inner) use ($search, $ticketNumber): void {
                     $inner->where('subject', 'like', $search)
                         ->orWhere('description', 'like', $search)
                         ->orWhereHas('company', fn ($company) => $company->where('name', 'like', $search))
                         ->orWhereHas('tags', fn ($tag) => $tag->where('name', 'like', $search));
+
+                    if (ctype_digit($ticketNumber)) {
+                        $inner->orWhere('ticket_number', (int) $ticketNumber);
+                    }
                 });
             })
             ->when($request->string('queue')->isNotEmpty(), fn ($query) => $this->applyQueueFilter($query, $request->string('queue')->toString(), $request))
@@ -129,11 +136,19 @@ class TicketController extends Controller
             $assignments->assign($ticket, $assignee, $request->user(), $request);
         }
 
-        return redirect()->route('admin.tickets.show', $ticket)->with('success', 'Ticket created.');
+        return redirect()->route('admin.tickets.show', $ticket->adminRouteParameters())->with('success', 'Ticket created.');
+    }
+
+    public function legacyShow(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorize('view', $ticket);
+
+        return redirect()->route('admin.tickets.show', $ticket->adminRouteParameters());
     }
 
     public function show(
         Request $request,
+        Company $company,
         Ticket $ticket,
         TicketWorkflowService $workflow,
         IssueTrackingService $issueTracking,
@@ -190,7 +205,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function update(Request $request, Ticket $ticket, IssueTrackingService $issueTracking, HtmlSanitizer $sanitizer): RedirectResponse
+    public function update(Request $request, Company $company, Ticket $ticket, IssueTrackingService $issueTracking, HtmlSanitizer $sanitizer): RedirectResponse
     {
         $this->authorize('update', $ticket);
 
@@ -226,7 +241,7 @@ class TicketController extends Controller
         return back()->with('success', 'Ticket updated.');
     }
 
-    public function changeStatus(ChangeTicketStatusRequest $request, Ticket $ticket, TicketWorkflowService $workflow): RedirectResponse
+    public function changeStatus(ChangeTicketStatusRequest $request, Company $company, Ticket $ticket, TicketWorkflowService $workflow): RedirectResponse
     {
         $this->authorize('changeStatus', $ticket);
 
@@ -235,7 +250,7 @@ class TicketController extends Controller
         return back()->with('success', 'Status updated.');
     }
 
-    public function assign(AssignTicketRequest $request, Ticket $ticket, TicketAssignmentService $assignments): RedirectResponse
+    public function assign(AssignTicketRequest $request, Company $company, Ticket $ticket, TicketAssignmentService $assignments): RedirectResponse
     {
         $this->authorize('assign', $ticket);
 
@@ -248,7 +263,7 @@ class TicketController extends Controller
         return back()->with('success', $assignee ? 'Ticket assigned.' : 'Ticket unassigned.');
     }
 
-    public function comment(StoreTicketCommentRequest $request, Ticket $ticket, TicketCommentService $comments): RedirectResponse
+    public function comment(StoreTicketCommentRequest $request, Company $company, Ticket $ticket, TicketCommentService $comments): RedirectResponse
     {
         $this->authorize('comment', $ticket);
 
@@ -265,7 +280,7 @@ class TicketController extends Controller
         return back()->with('success', 'Comment added.');
     }
 
-    public function updateTargets(UpdateTicketTargetsRequest $request, Ticket $ticket, TicketTargetService $targets): RedirectResponse
+    public function updateTargets(UpdateTicketTargetsRequest $request, Company $company, Ticket $ticket, TicketTargetService $targets): RedirectResponse
     {
         $this->authorize('manageTargets', $ticket);
 
@@ -280,7 +295,7 @@ class TicketController extends Controller
         return back()->with('success', 'Targets updated.');
     }
 
-    public function addWatcher(StoreTicketWatcherRequest $request, Ticket $ticket, TicketWatcherService $watchers): RedirectResponse
+    public function addWatcher(StoreTicketWatcherRequest $request, Company $company, Ticket $ticket, TicketWatcherService $watchers): RedirectResponse
     {
         $this->authorize('addWatcher', $ticket);
 
@@ -291,7 +306,7 @@ class TicketController extends Controller
         return back()->with('success', 'Watcher added.');
     }
 
-    public function removeWatcher(Request $request, Ticket $ticket, User $user, TicketWatcherService $watchers): RedirectResponse
+    public function removeWatcher(Request $request, Company $company, Ticket $ticket, User $user, TicketWatcherService $watchers): RedirectResponse
     {
         $this->authorize('addWatcher', $ticket);
 
@@ -300,7 +315,7 @@ class TicketController extends Controller
         return back()->with('success', 'Watcher removed.');
     }
 
-    public function attachment(Request $request, Ticket $ticket, TicketAttachmentService $attachments): RedirectResponse
+    public function attachment(Request $request, Company $company, Ticket $ticket, TicketAttachmentService $attachments): RedirectResponse
     {
         $this->authorize('attach', $ticket);
 
@@ -318,10 +333,15 @@ class TicketController extends Controller
     {
         return [
             'id' => $ticket->public_id,
+            'ticket_number' => $ticket->ticket_number,
+            'display_id' => $ticket->displayId(),
+            'route_params' => $ticket->adminRouteParameters(),
+            'url' => route('admin.tickets.show', $ticket->adminRouteParameters()),
             'subject' => $ticket->subject,
             'status' => $ticket->status->value,
             'priority' => $ticket->priority->value,
             'company' => $ticket->company?->name,
+            'company_slug' => $ticket->company?->slug,
             'project' => $ticket->supportProject?->name,
             'project_id' => $ticket->supportProject?->public_id,
             'tracker' => $ticket->tracker?->name,

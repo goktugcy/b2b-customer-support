@@ -12,7 +12,7 @@ import CardDescription from '@/Components/ui/card/CardDescription.vue'
 type Metrics = {
   summary: Record<string, number>
   by_status: Record<string, number>
-  recent_tickets: { id: string; subject: string; status: string; priority: string; assignee?: string; updated_at?: string }[]
+  recent_tickets: { id: string; display_id: string; url: string; subject: string; status: string; priority: string; assignee?: string; updated_at?: string }[]
 }
 
 defineProps<{ metrics: Metrics }>()
@@ -76,7 +76,7 @@ const percentage = (items: Record<string, number>, value: number) => {
           <div class="divide-y">
             <div v-for="ticket in metrics.recent_tickets" :key="ticket.id" class="flex items-center justify-between gap-4 py-3 text-sm first:pt-0 last:pb-0">
               <div class="min-w-0">
-                <Link :href="route('portal.tickets.show', ticket.id)" class="font-medium transition-colors hover:text-primary">{{ ticket.subject }}</Link>
+                <Link :href="ticket.url" class="font-medium transition-colors hover:text-primary">{{ ticket.display_id }} · {{ ticket.subject }}</Link>
                 <p class="text-muted-foreground">{{ ticket.assignee || 'Unassigned' }} · {{ ticket.updated_at }}</p>
               </div>
               <div class="flex shrink-0 gap-2"><Badge>{{ ticket.status }}</Badge><Badge tone="neutral">{{ ticket.priority }}</Badge></div>

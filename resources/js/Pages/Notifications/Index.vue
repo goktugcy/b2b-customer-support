@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { CheckCheck, ExternalLink } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
@@ -12,7 +12,6 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import type { PageProps, Paginated } from '@/types'
-import { usePage } from '@inertiajs/vue3'
 
 type NotificationRow = {
   id: string
@@ -29,6 +28,21 @@ const Layout = page.props.auth.user?.is_provider ? AdminLayout : PortalLayout
 
 const markRead = (id: string) => router.patch(route('notifications.read', id), {}, { preserveScroll: true })
 const markAllRead = () => router.patch(route('notifications.read-all'), {}, { preserveScroll: true })
+
+const titleFor = (item: NotificationRow): string => {
+  const subject = item.data.ticket_subject ?? item.data.message ?? item.type
+
+  return item.data.display_id ? `${item.data.display_id} · ${subject}` : String(subject)
+}
+
+const messageFor = (item: NotificationRow): string => String(item.data.message ?? 'Notification update')
+
+const timeFor = (value: string): string => new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+}).format(new Date(value))
 </script>
 
 <template>
@@ -50,14 +64,22 @@ const markAllRead = () => router.patch(route('notifications.read-all'), {}, { pr
       </CardHeader>
       <CardContent class="p-0">
         <div v-if="notifications.data.length" class="divide-y">
-          <div v-for="item in notifications.data" :key="item.id" class="flex flex-wrap items-start justify-between gap-3 p-4">
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <Badge :tone="item.read_at ? 'neutral' : 'blue'">{{ item.read_at ? 'read' : 'unread' }}</Badge>
-                <p class="text-sm font-medium">{{ item.data.ticket_subject ?? item.data.message ?? item.type }}</p>
+          <div v-for="item in notifications.data" :key="item.id" class="flex flex-wrap items-start justify-between gap-3 p-4 transition-colors hover:bg-secondary/50">
+            <div class="flex min-w-0 flex-1 gap-3">
+              <span
+                :class="[
+                  'mt-2 h-2 w-2 shrink-0 rounded-full',
+                  item.read_at ? 'bg-border' : 'bg-primary',
+                ]"
+              />
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <Badge :tone="item.read_at ? 'neutral' : 'blue'">{{ item.read_at ? 'read' : 'unread' }}</Badge>
+                  <p class="truncate text-sm font-medium">{{ titleFor(item) }}</p>
+                </div>
+                <p class="mt-1 text-sm text-muted-foreground">{{ messageFor(item) }}</p>
+                <p class="mt-2 text-xs text-muted-foreground">{{ timeFor(item.created_at) }}</p>
               </div>
-              <p class="mt-1 text-sm text-muted-foreground">{{ item.data.message }}</p>
-              <p class="mt-2 text-xs text-muted-foreground">{{ item.created_at }}</p>
             </div>
             <div class="flex items-center gap-2">
               <Link v-if="item.data.url" :href="String(item.data.url)">

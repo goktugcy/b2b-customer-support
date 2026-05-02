@@ -26,8 +26,8 @@ class TicketUpdatedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $ticketUrl = $notifiable instanceof User && $notifiable->isProviderUser()
-            ? route('admin.tickets.show', $this->ticket)
-            : route('portal.tickets.show', $this->ticket);
+            ? route('admin.tickets.show', $this->ticket->adminRouteParameters())
+            : route('portal.tickets.show', $this->ticket->portalRouteParameters());
 
         return (new MailMessage)
             ->subject($this->subject())
@@ -66,12 +66,14 @@ class TicketUpdatedNotification extends Notification
         return [
             'event' => $this->event,
             'ticket_id' => $this->ticket->public_id,
+            'ticket_number' => $this->ticket->ticket_number,
+            'display_id' => $this->ticket->displayId(),
             'ticket_subject' => $this->ticket->subject,
             'subject_user' => $this->subjectUser?->name,
             'message' => $this->line(),
             'url' => $notifiable instanceof User && $notifiable->isProviderUser()
-                ? route('admin.tickets.show', $this->ticket)
-                : route('portal.tickets.show', $this->ticket),
+                ? route('admin.tickets.show', $this->ticket->adminRouteParameters())
+                : route('portal.tickets.show', $this->ticket->portalRouteParameters()),
         ];
     }
 }

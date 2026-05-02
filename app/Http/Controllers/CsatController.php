@@ -20,6 +20,7 @@ class CsatController extends Controller
             'token' => $token,
             'ticket' => [
                 'id' => $survey->ticket?->public_id,
+                'display_id' => $survey->ticket?->displayId(),
                 'subject' => $survey->ticket?->subject,
             ],
         ]);

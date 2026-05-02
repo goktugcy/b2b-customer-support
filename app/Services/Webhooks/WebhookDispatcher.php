@@ -51,6 +51,8 @@ class WebhookDispatcher
             'data' => [
                 'ticket' => [
                     'id' => $event->ticket->public_id,
+                    'ticket_number' => $event->ticket->ticket_number,
+                    'display_id' => $event->ticket->displayId(),
                     'company_id' => $event->ticket->company->public_id,
                     'subject' => $event->ticket->subject,
                     'status' => $event->ticket->status->value,

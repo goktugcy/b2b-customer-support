@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Ticket;
 use App\Services\Tickets\TicketMergeSplitService;
 use Illuminate\Http\RedirectResponse;
@@ -10,21 +11,32 @@ use Illuminate\Http\Request;
 
 class TicketMergeSplitController extends Controller
 {
-    public function merge(Request $request, Ticket $ticket, TicketMergeSplitService $service): RedirectResponse
+    public function merge(Request $request, Company $company, Ticket $ticket, TicketMergeSplitService $service): RedirectResponse
     {
         $this->authorize('merge', $ticket);
 
         $validated = $request->validate([
-            'target_ticket_id' => ['required', 'string', 'exists:tickets,public_id'],
+            'target_ticket_id' => ['required', 'string', 'max:64'],
         ]);
 
-        $target = Ticket::query()->where('public_id', $validated['target_ticket_id'])->firstOrFail();
+        $targetInput = ltrim($validated['target_ticket_id'], '#');
+        $target = Ticket::query()
+            ->where('company_id', $ticket->company_id)
+            ->where(function ($query) use ($targetInput): void {
+                if (ctype_digit($targetInput)) {
+                    $query->where('ticket_number', (int) $targetInput);
+                }
+
+                $query->orWhere('public_id', $targetInput);
+            })
+            ->firstOrFail();
+
         $service->merge($ticket, $target, $request->user(), $request);
 
-        return redirect()->route('admin.tickets.show', $target)->with('success', 'Ticket merged.');
+        return redirect()->route('admin.tickets.show', $target->adminRouteParameters())->with('success', 'Ticket merged.');
     }
 
-    public function split(Request $request, Ticket $ticket, TicketMergeSplitService $service): RedirectResponse
+    public function split(Request $request, Company $company, Ticket $ticket, TicketMergeSplitService $service): RedirectResponse
     {
         $this->authorize('split', $ticket);
 
@@ -36,6 +48,6 @@ class TicketMergeSplitController extends Controller
 
         $newTicket = $service->split($ticket, $request->user(), $validated['subject'], $validated['comment_ids'], $request);
 
-        return redirect()->route('admin.tickets.show', $newTicket)->with('success', 'Ticket split created.');
+        return redirect()->route('admin.tickets.show', $newTicket->adminRouteParameters())->with('success', 'Ticket split created.');
     }
 }

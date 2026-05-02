@@ -9,6 +9,7 @@ use App\Enums\TicketStatus;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasPublicId;
 use App\Services\Content\HtmlSanitizer;
+use App\Services\Tickets\TicketNumberService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'public_id',
+        'ticket_number',
         'company_id',
         'support_project_id',
         'ticket_tracker_id',
@@ -59,6 +61,7 @@ class Ticket extends Model
             'status' => TicketStatus::class,
             'priority' => TicketPriority::class,
             'source' => TicketSource::class,
+            'ticket_number' => 'integer',
             'merged_at' => 'datetime',
             'first_response_due_at' => 'datetime',
             'due_at' => 'datetime',
@@ -78,6 +81,54 @@ class Ticket extends Model
         return Attribute::make(
             get: fn (?string $value): string => app(HtmlSanitizer::class)->sanitize($value),
         );
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Ticket $ticket): void {
+            if (! $ticket->ticket_number && $ticket->company_id) {
+                $ticket->ticket_number = app(TicketNumberService::class)->nextForCompany((int) $ticket->company_id);
+            }
+        });
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        if ($field === 'ticket_number') {
+            $query = static::query()->where('ticket_number', $value);
+            $company = request()->route('company');
+            $user = request()->user();
+
+            if ($company instanceof Company) {
+                $query->where('company_id', $company->id);
+            } elseif ($user instanceof User && $user->isCustomerUser()) {
+                $query->where('company_id', $user->company_id);
+            }
+
+            return $query->first();
+        }
+
+        return parent::resolveRouteBinding($value, $field);
+    }
+
+    public function displayId(): string
+    {
+        return '#'.$this->ticket_number;
+    }
+
+    public function adminRouteParameters(): array
+    {
+        $this->loadMissing('company');
+
+        return [
+            'company' => $this->company?->slug,
+            'ticket' => $this->ticket_number,
+        ];
+    }
+
+    public function portalRouteParameters(): array
+    {
+        return ['ticket' => $this->ticket_number];
     }
 
     public function createdBy(): BelongsTo

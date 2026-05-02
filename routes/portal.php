@@ -17,12 +17,13 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
         Route::get('/', fn () => redirect()->route('portal.home'))->name('dashboard');
         Route::get('dashboard', DashboardController::class)->name('home');
 
-        Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
-        Route::patch('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
-        Route::post('tickets/{ticket}/watchers', [TicketController::class, 'addWatcher'])->name('tickets.watchers.store');
-        Route::delete('tickets/{ticket}/watchers/{user}', [TicketController::class, 'removeWatcher'])->name('tickets.watchers.destroy');
-        Route::post('tickets/{ticket}/attachments', [TicketController::class, 'attachment'])->name('tickets.attachments.store');
-        Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment'])->name('tickets.comments.store');
+        Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store']);
+        Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::patch('tickets/{ticket:ticket_number}/status', [TicketController::class, 'changeStatus'])->whereNumber('ticket')->name('tickets.status');
+        Route::post('tickets/{ticket:ticket_number}/watchers', [TicketController::class, 'addWatcher'])->whereNumber('ticket')->name('tickets.watchers.store');
+        Route::delete('tickets/{ticket:ticket_number}/watchers/{user}', [TicketController::class, 'removeWatcher'])->whereNumber('ticket')->name('tickets.watchers.destroy');
+        Route::post('tickets/{ticket:ticket_number}/attachments', [TicketController::class, 'attachment'])->whereNumber('ticket')->name('tickets.attachments.store');
+        Route::post('tickets/{ticket:ticket_number}/comments', [TicketController::class, 'comment'])->whereNumber('ticket')->name('tickets.comments.store');
         Route::post('ticket-views', [TicketSavedViewController::class, 'store'])->name('ticket-views.store');
         Route::patch('ticket-views/{ticketView}', [TicketSavedViewController::class, 'update'])->name('ticket-views.update');
         Route::delete('ticket-views/{ticketView}', [TicketSavedViewController::class, 'destroy'])->name('ticket-views.destroy');

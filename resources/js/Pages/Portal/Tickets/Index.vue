@@ -22,6 +22,9 @@ import type { Paginated, ProjectOption, SelectOption, TagOption, TrackerOption }
 
 type TicketRow = {
   id: string
+  ticket_number: number
+  display_id: string
+  url: string
   subject: string
   status: string
   priority: string
@@ -98,7 +101,7 @@ const createSavedView = () => {
         <div class="grid gap-3 md:grid-cols-6">
           <div class="relative md:col-span-2">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input v-model="filter.search" class="pl-9" placeholder="Search tickets" @keydown.enter.prevent="applyFilters" />
+            <Input v-model="filter.search" class="pl-9" placeholder="Search #100001 or subject" @keydown.enter.prevent="applyFilters" />
           </div>
           <Select v-model="filter.queue" @change="applyFilters">
             <option value="">All queues</option>
@@ -142,7 +145,10 @@ const createSavedView = () => {
           <TableBody v-if="tickets.data.length">
             <TableRow v-for="ticket in tickets.data" :key="ticket.id">
               <TableCell>
-                <Link :href="route('portal.tickets.show', ticket.id)" class="font-medium transition-colors hover:text-primary">{{ ticket.subject }}</Link>
+                <Link :href="ticket.url" class="group inline-flex min-w-0 flex-col transition-colors hover:text-primary">
+                  <span class="text-xs font-semibold text-primary">{{ ticket.display_id }}</span>
+                  <span class="truncate font-medium text-foreground group-hover:text-primary">{{ ticket.subject }}</span>
+                </Link>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
                   <Badge v-if="ticket.sla === 'breached'" tone="red">SLA breached</Badge>

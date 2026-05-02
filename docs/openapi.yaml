@@ -39,6 +39,8 @@ components:
       type: object
       properties:
         id: { type: string }
+        ticket_number: { type: integer, description: Company-scoped human ticket number starting at 100001. }
+        display_id: { type: string, example: '#100001' }
         company_id: { type: string }
         subject: { type: string }
         description: { type: string }

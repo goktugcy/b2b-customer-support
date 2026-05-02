@@ -26,8 +26,8 @@ class MentionedInTicketNotification extends Notification
     {
         $ticket = $this->comment->ticket;
         $ticketUrl = $notifiable instanceof User && $notifiable->isProviderUser()
-            ? route('admin.tickets.show', $ticket)
-            : route('portal.tickets.show', $ticket);
+            ? route('admin.tickets.show', $ticket->adminRouteParameters())
+            : route('portal.tickets.show', $ticket->portalRouteParameters());
 
         return (new MailMessage)
             ->subject('You were mentioned: '.$ticket->subject)
@@ -44,13 +44,15 @@ class MentionedInTicketNotification extends Notification
         return [
             'event' => 'ticket.mention.created',
             'ticket_id' => $ticket->public_id,
+            'ticket_number' => $ticket->ticket_number,
+            'display_id' => $ticket->displayId(),
             'ticket_subject' => $ticket->subject,
             'comment_id' => $this->comment->public_id,
             'mentioned_by' => $this->mentionedBy->name,
             'message' => $this->mentionedBy->name.' mentioned you on a ticket.',
             'url' => $notifiable instanceof User && $notifiable->isProviderUser()
-                ? route('admin.tickets.show', $ticket)
-                : route('portal.tickets.show', $ticket),
+                ? route('admin.tickets.show', $ticket->adminRouteParameters())
+                : route('portal.tickets.show', $ticket->portalRouteParameters()),
         ];
     }
 }

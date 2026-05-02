@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import {
   ChevronRight,
-  Bell,
   LogOut,
   Menu,
   ShieldCheck,
@@ -12,6 +11,7 @@ import {
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import FlashMessages from '@/Components/shared/FlashMessages.vue'
+import NotificationInboxDropdown from '@/Components/shared/NotificationInboxDropdown.vue'
 import ThemeToggle from '@/Components/shared/ThemeToggle.vue'
 import type { PageProps } from '@/types'
 
@@ -36,6 +36,7 @@ const user = computed(() => page.props.auth.user)
 const sectionLabel = computed(() => props.section === 'admin' ? 'Admin Console' : 'Client Portal')
 const sectionDescription = computed(() => props.section === 'admin' ? 'Provider operations' : 'Customer workspace')
 const homeRoute = computed(() => props.section === 'admin' ? 'admin.home' : 'portal.home')
+const canViewNotifications = computed(() => user.value?.permissions.includes('notifications.view') ?? false)
 const initials = computed(() => (user.value?.name ?? 'CS')
   .split(' ')
   .map((part) => part[0])
@@ -126,19 +127,7 @@ const isActive = (routeName: string) => route().current(routeName) || route().cu
           </div>
           <div class="flex items-center gap-2">
             <ThemeToggle />
-            <Link
-              :href="route('notifications.index')"
-              class="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-label="Notifications"
-            >
-              <Bell class="h-5 w-5" />
-              <span
-                v-if="(page.props.notifications?.unread_count ?? 0) > 0"
-                class="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground"
-              >
-                {{ page.props.notifications?.unread_count }}
-              </span>
-            </Link>
+            <NotificationInboxDropdown v-if="canViewNotifications" :unread-count="page.props.notifications?.unread_count ?? 0" />
             <div class="hidden text-right md:block">
               <p class="text-sm font-medium text-foreground">{{ user?.name }}</p>
               <p class="text-xs text-muted-foreground">{{ user?.company?.name }}</p>

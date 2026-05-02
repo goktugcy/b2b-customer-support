@@ -12,7 +12,7 @@ import FieldError from '@/Components/shared/FieldError.vue'
 
 defineProps<{
   token: string
-  ticket: { id: string; subject: string }
+  ticket: { id: string; display_id?: string; subject: string }
 }>()
 
 const form = useForm({ rating: 0, comment: '' })
@@ -24,7 +24,7 @@ const form = useForm({ rating: 0, comment: '' })
     <Card class="w-full max-w-xl">
       <CardHeader>
         <CardTitle>Rate your support experience</CardTitle>
-        <p class="text-sm text-muted-foreground">{{ ticket.subject }}</p>
+        <p class="text-sm text-muted-foreground">{{ ticket.display_id ? `${ticket.display_id} · ${ticket.subject}` : ticket.subject }}</p>
       </CardHeader>
       <CardContent>
         <form class="space-y-5" @submit.prevent="form.post(route('csat.submit', token))">
