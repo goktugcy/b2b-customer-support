@@ -14,16 +14,21 @@ use App\Http\Requests\Admin\StoreTicketRequest;
 use App\Http\Requests\Admin\StoreTicketWatcherRequest;
 use App\Http\Requests\Admin\UpdateTicketTargetsRequest;
 use App\Models\Company;
+use App\Models\CannedResponse;
 use App\Models\SupportDepartment;
 use App\Models\Ticket;
+use App\Models\TicketSavedView;
 use App\Models\TicketTag;
 use App\Models\User;
+use App\Services\CannedResponses\CannedResponseService;
 use App\Services\Content\HtmlSanitizer;
 use App\Services\Tickets\IssueTrackingService;
+use App\Services\Tickets\MentionParserService;
 use App\Services\Tickets\TicketAssignmentService;
 use App\Services\Tickets\TicketAttachmentService;
 use App\Services\Tickets\TicketCommentService;
 use App\Services\Tickets\TicketCreationService;
+use App\Services\Tickets\TicketSavedViewService;
 use App\Services\Tickets\TicketTargetService;
 use App\Services\Tickets\TicketWatcherService;
 use App\Services\Tickets\TicketWorkflowService;
@@ -35,7 +40,7 @@ use Inertia\Response;
 
 class TicketController extends Controller
 {
-    public function index(Request $request, IssueTrackingService $issueTracking): Response
+    public function index(Request $request, IssueTrackingService $issueTracking, TicketSavedViewService $savedViews): Response
     {
         $this->authorize('viewAny', Ticket::class);
 
@@ -74,6 +79,10 @@ class TicketController extends Controller
             'tags' => $issueTracking->tagOptions(),
             'statuses' => $this->statusOptions(),
             'priorities' => $this->priorityOptions(),
+            'agents' => $this->providerUsers(),
+            'savedViews' => $savedViews->visibleTo($request->user(), TicketSavedView::SECTION_ADMIN)
+                ->map(fn (TicketSavedView $view): array => $savedViews->payload($view))
+                ->values(),
         ]);
     }
 
@@ -123,7 +132,14 @@ class TicketController extends Controller
         return redirect()->route('admin.tickets.show', $ticket)->with('success', 'Ticket created.');
     }
 
-    public function show(Request $request, Ticket $ticket, TicketWorkflowService $workflow, IssueTrackingService $issueTracking): Response
+    public function show(
+        Request $request,
+        Ticket $ticket,
+        TicketWorkflowService $workflow,
+        IssueTrackingService $issueTracking,
+        CannedResponseService $cannedResponses,
+        MentionParserService $mentions,
+    ): Response
     {
         $this->authorize('view', $ticket);
 
@@ -142,6 +158,7 @@ class TicketController extends Controller
             'targetDepartments',
             'targetUsers',
             'watcherUsers',
+            'csatSurveys',
             'events' => fn ($query) => $query->with(['actor', 'apiClient'])->orderBy('occurred_at'),
         ]);
 
@@ -158,6 +175,18 @@ class TicketController extends Controller
             'categories' => $issueTracking->categoryOptions(),
             'tags' => $issueTracking->tagOptions(),
             'customFields' => $issueTracking->customFieldOptions(),
+            'cannedResponses' => $cannedResponses->forUser($request->user())
+                ->map(fn (CannedResponse $response): array => [
+                    'id' => $response->public_id,
+                    'title' => $response->title,
+                    'shortcut' => $response->shortcut,
+                    'body' => $cannedResponses->render($response, $ticket, $request->user()),
+                ])
+                ->values(),
+            'mentionableUsers' => [
+                'public' => $mentions->mentionableUsers($ticket, TicketVisibility::Public),
+                'internal' => $mentions->mentionableUsers($ticket, TicketVisibility::Internal),
+            ],
         ]);
     }
 
@@ -230,6 +259,7 @@ class TicketController extends Controller
             TicketVisibility::from($request->validated('visibility')),
             $request,
             (array) $request->file('attachments', []),
+            $request->validated('mentioned_user_ids', []),
         );
 
         return back()->with('success', 'Comment added.');
@@ -379,6 +409,11 @@ class TicketController extends Controller
                 'new_values' => $event->new_values,
                 'occurred_at' => $event->occurred_at?->toISOString(),
             ]),
+            'csat' => [
+                'latest_rating' => $ticket->csatSurveys->sortByDesc('responded_at')->first()?->rating,
+                'average_rating' => $ticket->csatSurveys->whereNotNull('rating')->avg('rating'),
+                'responses_count' => $ticket->csatSurveys->whereNotNull('responded_at')->count(),
+            ],
         ];
     }
 

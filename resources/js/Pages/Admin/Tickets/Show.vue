@@ -7,6 +7,7 @@ import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
@@ -15,6 +16,7 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import AttachmentList from '@/Components/shared/AttachmentList.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
+import CollapsibleMetaBox from '@/Components/shared/CollapsibleMetaBox.vue'
 import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
@@ -48,7 +50,9 @@ type TicketDetail = {
   attachments: Attachment[]
   comments: { id: string; body: string; visibility: string; author?: string; created_at: string; attachments: Attachment[] }[]
   events: { id: number; type: string; actor?: string; old_values?: unknown; new_values?: unknown; occurred_at: string }[]
+  csat: { latest_rating?: number | null; average_rating?: number | null; responses_count: number }
 }
+type CannedResponse = { id: string; title: string; shortcut?: string | null; body: string }
 
 const props = defineProps<{
   ticket: TicketDetail
@@ -63,6 +67,8 @@ const props = defineProps<{
   categories: CategoryOption[]
   tags: TagOption[]
   customFields: CustomFieldDefinition[]
+  cannedResponses: CannedResponse[]
+  mentionableUsers: { public: MultiSelectOption[]; internal: MultiSelectOption[] }
 }>()
 
 const editForm = useForm({
@@ -77,13 +83,16 @@ const editForm = useForm({
 
 const statusForm = useForm({ status: props.transitions[0]?.value ?? props.ticket.status })
 const assignForm = useForm({ assigned_to_user_id: props.ticket.assignee_id ?? '' })
-const commentForm = useForm({ body: '', visibility: 'public', attachments: [] as File[] })
+const commentForm = useForm({ body: '', visibility: 'public', mentioned_user_ids: [] as string[], attachments: [] as File[] })
 const targetForm = useForm({
   target_department_ids: props.ticket.targets.departments.map((department) => department.id),
   target_user_ids: props.ticket.targets.users.map((user) => user.id),
 })
 const watcherForm = useForm({ user_id: '' })
 const attachmentForm = useForm({ visibility: 'public', attachments: [] as File[] })
+const mergeForm = useForm({ target_ticket_id: '' })
+const splitForm = useForm({ subject: `Follow-up: ${props.ticket.subject}`, comment_ids: [] as string[] })
+const cannedResponseId = ref('')
 
 const watcherOptions = computed(() => props.providerUsers.filter((user) => !props.ticket.watchers.some((watcher) => watcher.id === user.id)))
 const targetErrors = computed(() => targetForm.errors.target_department_ids || targetForm.errors.target_user_ids || (targetForm.errors as Record<string, string | undefined>).targets)
@@ -91,6 +100,7 @@ const filteredCategories = computed(() => props.categories.filter((category) => 
 const selectedCustomFields = computed(() => props.customFields.filter((field) => field.tracker_id === editForm.tracker_id && field.status !== 'disabled'))
 const commentAttachmentErrors = computed(() => commentForm.errors.attachments || Object.entries(commentForm.errors).find(([key]) => key.startsWith('attachments.'))?.[1])
 const attachmentUploadError = ref('')
+const currentMentionOptions = computed(() => commentForm.visibility === 'internal' ? props.mentionableUsers.internal : props.mentionableUsers.public)
 
 watch(() => editForm.project_id, () => {
   if (!filteredCategories.value.some((category) => category.id === editForm.category_id)) {
@@ -108,6 +118,7 @@ const addComment = () => commentForm.post(route('admin.tickets.comments.store', 
   forceFormData: true,
   onSuccess: () => {
     commentForm.reset('body')
+    commentForm.mentioned_user_ids = []
     commentForm.attachments = []
   },
 })
@@ -120,6 +131,16 @@ const addWatcher = () => watcherForm.post(route('admin.tickets.watchers.store', 
 const removeWatcher = (userId: string) => {
   router.delete(route('admin.tickets.watchers.destroy', [props.ticket.id, userId]), { preserveScroll: true })
 }
+
+const applyCannedResponse = () => {
+  const response = props.cannedResponses.find((item) => item.id === cannedResponseId.value)
+  if (response) {
+    commentForm.body = response.body
+  }
+}
+
+const mergeTicket = () => mergeForm.post(route('admin.tickets.merge', props.ticket.id), { preserveScroll: true })
+const splitTicket = () => splitForm.post(route('admin.tickets.split', props.ticket.id), { preserveScroll: true })
 
 const uploadAttachments = () => {
   attachmentUploadError.value = ''
@@ -186,7 +207,10 @@ const uploadAttachments = () => {
               <div v-for="comment in ticket.comments" :key="comment.id" class="rounded-md border bg-background/70 p-3">
                 <div class="flex items-center justify-between gap-2">
                   <p class="text-sm font-medium">{{ comment.author || 'System' }}</p>
-                  <Badge :tone="comment.visibility === 'internal' ? 'amber' : 'green'">{{ comment.visibility }}</Badge>
+                  <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-1 text-xs text-muted-foreground"><Checkbox v-model="splitForm.comment_ids" :value="comment.id" /> Split</label>
+                    <Badge :tone="comment.visibility === 'internal' ? 'amber' : 'green'">{{ comment.visibility }}</Badge>
+                  </div>
                 </div>
                 <RichContent class="mt-2" :html="comment.body" />
                 <AttachmentList :attachments="comment.attachments" />
@@ -195,6 +219,10 @@ const uploadAttachments = () => {
 
             <form class="mt-5 space-y-3" @submit.prevent="addComment">
               <Label>Reply</Label>
+              <Select v-model="cannedResponseId" @change="applyCannedResponse">
+                <option value="">Canned response</option>
+                <option v-for="response in cannedResponses" :key="response.id" :value="response.id">{{ response.shortcut ? `${response.shortcut} · ${response.title}` : response.title }}</option>
+              </Select>
               <RichTextEditor v-model="commentForm.body" placeholder="Write a reply" />
               <FieldError :message="commentForm.errors.body" />
               <div class="grid gap-3 md:grid-cols-[180px_1fr]">
@@ -202,6 +230,9 @@ const uploadAttachments = () => {
                   <option value="public">Public reply</option>
                   <option value="internal">Internal note</option>
                 </Select>
+                <MultiSelectCombobox v-model="commentForm.mentioned_user_ids" :options="currentMentionOptions" placeholder="Mention users" />
+              </div>
+              <div>
                 <FilePicker v-model="commentForm.attachments" :error="commentAttachmentErrors" />
               </div>
               <div class="flex justify-end">
@@ -227,9 +258,7 @@ const uploadAttachments = () => {
       </div>
 
       <div class="space-y-4 xl:sticky xl:top-20 xl:self-start">
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Details</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Details">
             <form class="space-y-3" @submit.prevent="updateTicket">
               <div>
                 <Label>Subject</Label>
@@ -276,24 +305,37 @@ const uploadAttachments = () => {
               />
               <Button type="submit" variant="secondary" class="w-full">Save details</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Status</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Status">
             <form @submit.prevent="changeStatus">
               <Select v-model="statusForm.status">
                 <option v-for="status in transitions" :key="status.value" :value="status.value">{{ status.label }}</option>
               </Select>
               <Button type="submit" class="mt-3 w-full" :disabled="!transitions.length">Change status</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Assignment</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="CSAT" :default-open="false">
+            <p class="text-2xl font-semibold">{{ ticket.csat.average_rating ? Number(ticket.csat.average_rating).toFixed(1) : '-' }}</p>
+            <p class="text-sm text-muted-foreground">{{ ticket.csat.responses_count }} response(s)</p>
+            <p v-if="ticket.csat.latest_rating" class="mt-2 text-sm">Latest rating: {{ ticket.csat.latest_rating }}/5</p>
+        </CollapsibleMetaBox>
+
+        <CollapsibleMetaBox title="Merge / split" :default-open="false" content-class="space-y-4">
+            <form class="space-y-2" @submit.prevent="mergeTicket">
+              <Label>Merge into ticket ID</Label>
+              <Input v-model="mergeForm.target_ticket_id" placeholder="01H..." />
+              <Button type="submit" class="w-full" variant="secondary" :disabled="!mergeForm.target_ticket_id">Merge ticket</Button>
+            </form>
+            <form class="space-y-2 border-t pt-4" @submit.prevent="splitTicket">
+              <Label>Split selected comments</Label>
+              <Input v-model="splitForm.subject" />
+              <Button type="submit" class="w-full" variant="secondary" :disabled="!splitForm.comment_ids.length">Create split ticket</Button>
+            </form>
+        </CollapsibleMetaBox>
+
+        <CollapsibleMetaBox title="Assignment">
             <form @submit.prevent="assignTicket">
               <Select v-model="assignForm.assigned_to_user_id">
                 <option value="">Unassigned</option>
@@ -301,12 +343,9 @@ const uploadAttachments = () => {
               </Select>
               <Button type="submit" class="mt-3 w-full" variant="secondary">Update assignment</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Targets</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Targets" :default-open="false">
             <form class="space-y-3" @submit.prevent="updateTargets">
               <div>
                 <Label>Departments</Label>
@@ -319,12 +358,9 @@ const uploadAttachments = () => {
               <FieldError :message="targetErrors" />
               <Button type="submit" variant="secondary" class="w-full">Save targets</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Watchers</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Watchers" :default-open="false">
             <form @submit.prevent="addWatcher">
               <div class="flex flex-wrap gap-2">
                 <Badge v-for="watcher in ticket.watchers" :key="watcher.id" tone="neutral" class="gap-2">
@@ -341,12 +377,9 @@ const uploadAttachments = () => {
               <FieldError :message="watcherForm.errors.user_id" />
               <Button type="submit" class="mt-3 w-full" variant="secondary" :disabled="!watcherForm.user_id">Add watcher</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Attachments</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Attachments" :default-open="false">
             <form class="space-y-3" @submit.prevent="uploadAttachments">
               <Select v-model="attachmentForm.visibility">
                 <option value="public">Public</option>
@@ -355,8 +388,7 @@ const uploadAttachments = () => {
               <FilePicker v-model="attachmentForm.attachments" :error="attachmentUploadError" />
               <Button type="submit" class="w-full" variant="secondary" :disabled="!attachmentForm.attachments.length">Upload</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
       </div>
     </section>
   </AdminLayout>

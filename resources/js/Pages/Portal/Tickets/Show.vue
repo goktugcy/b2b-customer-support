@@ -14,9 +14,11 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import AttachmentList from '@/Components/shared/AttachmentList.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
+import CollapsibleMetaBox from '@/Components/shared/CollapsibleMetaBox.vue'
+import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
-import type { SelectOption } from '@/types'
+import type { MultiSelectOption, SelectOption } from '@/types'
 
 type Attachment = { id: string; filename: string; size: number; url: string }
 type Person = { id: string; name: string; side?: string }
@@ -37,15 +39,17 @@ type Ticket = {
   watchers: Person[]
   attachments: Attachment[]
   comments: { id: string; body: string; author?: string; created_at: string; attachments: Attachment[] }[]
+  csat: { latest_rating?: number | null; responses_count: number }
 }
 
 const props = defineProps<{
   ticket: Ticket
   transitions: SelectOption[]
   watcherUsers: Person[]
+  mentionableUsers: MultiSelectOption[]
 }>()
 
-const form = useForm({ body: '', attachments: [] as File[] })
+const form = useForm({ body: '', mentioned_user_ids: [] as string[], attachments: [] as File[] })
 const statusForm = useForm({ status: props.transitions[0]?.value ?? 'resolved' })
 const watcherForm = useForm({ user_id: '' })
 const attachmentForm = useForm({ attachments: [] as File[] })
@@ -59,6 +63,7 @@ const submit = () => form.post(route('portal.tickets.comments.store', props.tick
   forceFormData: true,
   onSuccess: () => {
     form.reset('body')
+    form.mentioned_user_ids = []
     form.attachments = []
   },
 })
@@ -132,6 +137,7 @@ const uploadAttachments = () => {
               <Label>Reply</Label>
               <RichTextEditor v-model="form.body" placeholder="Write a reply" />
               <FieldError :message="form.errors.body" />
+              <MultiSelectCombobox v-model="form.mentioned_user_ids" :options="mentionableUsers" placeholder="Mention users" />
               <FilePicker v-model="form.attachments" :error="commentAttachmentErrors" />
               <Button type="submit" :disabled="form.processing">Add reply</Button>
             </form>
@@ -140,9 +146,7 @@ const uploadAttachments = () => {
       </div>
 
       <div class="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Ticket details</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Ticket details">
             <dl class="space-y-3 text-sm">
               <div><dt class="text-muted-foreground">Assignee</dt><dd class="font-medium">{{ ticket.assignee || 'Unassigned' }}</dd></div>
               <div><dt class="text-muted-foreground">Project</dt><dd class="font-medium">{{ ticket.project || '-' }}</dd></div>
@@ -155,34 +159,30 @@ const uploadAttachments = () => {
                 <dd class="font-medium">{{ Array.isArray(field.value) ? field.value.join(', ') : field.value || '-' }}</dd>
               </div>
             </dl>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card v-if="transitions.length">
-          <CardHeader><CardTitle class="text-sm">Status</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="CSAT" :default-open="false">
+            <p class="text-2xl font-semibold">{{ ticket.csat.latest_rating ? `${ticket.csat.latest_rating}/5` : '-' }}</p>
+            <p class="text-sm text-muted-foreground">{{ ticket.csat.responses_count }} response(s)</p>
+        </CollapsibleMetaBox>
+
+        <CollapsibleMetaBox v-if="transitions.length" title="Status">
             <form @submit.prevent="changeStatus">
               <Select v-model="statusForm.status">
                 <option v-for="status in transitions" :key="status.value" :value="status.value">{{ status.label }}</option>
               </Select>
               <Button type="submit" class="mt-3 w-full">Update status</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Targets</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Targets" :default-open="false">
             <div class="flex flex-wrap gap-2">
               <Badge v-for="department in ticket.targets.departments" :key="department.id" tone="blue">{{ department.name }}</Badge>
               <Badge v-for="user in ticket.targets.users" :key="user.id" tone="neutral">{{ user.name }}</Badge>
             </div>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Watchers</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Watchers" :default-open="false">
             <form @submit.prevent="addWatcher">
               <div class="flex flex-wrap gap-2">
                 <Badge v-for="watcher in ticket.watchers" :key="watcher.id" tone="neutral" class="gap-2">
@@ -199,18 +199,14 @@ const uploadAttachments = () => {
               <FieldError :message="watcherForm.errors.user_id" />
               <Button type="submit" class="mt-3 w-full" variant="secondary" :disabled="!watcherForm.user_id">Add watcher</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Attachments</CardTitle></CardHeader>
-          <CardContent>
+        <CollapsibleMetaBox title="Attachments" :default-open="false">
             <form class="space-y-3" @submit.prevent="uploadAttachments">
               <FilePicker v-model="attachmentForm.attachments" :error="attachmentUploadError" />
               <Button type="submit" class="w-full" variant="secondary" :disabled="!attachmentForm.attachments.length">Upload</Button>
             </form>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
       </div>
     </section>
   </PortalLayout>

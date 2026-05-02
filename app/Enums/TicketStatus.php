@@ -10,6 +10,7 @@ enum TicketStatus: string
     case Pending = 'pending';
     case Resolved = 'resolved';
     case Closed = 'closed';
+    case Merged = 'merged';
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum TicketStatus: string
             self::Pending => 'Pending',
             self::Resolved => 'Resolved',
             self::Closed => 'Closed',
+            self::Merged => 'Merged',
         };
     }
 }

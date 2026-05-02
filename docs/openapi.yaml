@@ -47,7 +47,77 @@ components:
         source: { type: string }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    TicketBulkUpdate:
+      type: object
+      required: [ticket_ids]
+      properties:
+        ticket_ids:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [resolved, closed], nullable: true }
+        priority: { type: string, enum: [low, normal, high, urgent], nullable: true }
+        tag_names:
+          type: array
+          items: { type: string }
+    TicketSavedView:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        filters:
+          type: object
+          additionalProperties: true
+        columns:
+          type: array
+          nullable: true
+          items: { type: string }
+        sort:
+          type: object
+          nullable: true
+          additionalProperties: true
+    KnowledgeBaseCategory:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        articles_count: { type: integer }
+    KnowledgeBaseArticle:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: string, nullable: true }
+        body: { type: string }
+        category: { type: string, nullable: true }
+        category_slug: { type: string, nullable: true }
+        published_at: { type: string, format: date-time, nullable: true }
+    CsatSubmit:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, maxLength: 2000, nullable: true }
 paths:
+  /csat/{token}:
+    post:
+      summary: Submit a single-use CSAT survey response
+      security: []
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CsatSubmit'
+      responses:
+        '200':
+          description: CSAT response accepted.
   /meta/ticket-options:
     get:
       summary: List ticket form options
@@ -83,6 +153,19 @@ paths:
       responses:
         '201':
           description: Created ticket.
+  /tickets/bulk:
+    patch:
+      summary: Company-safe bulk ticket update
+      description: API clients can resolve or close tickets, change priority, and replace tags for tickets in their tenant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketBulkUpdate'
+      responses:
+        '200':
+          description: Count of updated tickets.
   /tickets/{ticket}:
     get:
       summary: Show a ticket
@@ -135,3 +218,104 @@ paths:
       responses:
         '201':
           description: Created attachment.
+  /knowledge-base/categories:
+    get:
+      summary: List published public knowledge base categories
+      responses:
+        '200':
+          description: Category list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KnowledgeBaseCategory'
+  /knowledge-base/articles:
+    get:
+      summary: List published public knowledge base articles
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        '200':
+          description: Article list.
+  /knowledge-base/articles/{slug}:
+    get:
+      summary: Show a published public knowledge base article
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Article detail.
+  /ticket-views:
+    get:
+      summary: List shared company ticket views
+      responses:
+        '200':
+          description: Saved view list.
+    post:
+      summary: Create a shared company ticket view
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketSavedView'
+      responses:
+        '201':
+          description: Created saved view.
+  /ticket-views/{ticketView}:
+    patch:
+      summary: Update a shared company ticket view
+      parameters:
+        - in: path
+          name: ticketView
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated saved view.
+    delete:
+      summary: Delete a shared company ticket view
+      parameters:
+        - in: path
+          name: ticketView
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Deleted.
+  /reports/tickets.csv:
+    get:
+      summary: Export visible tickets as CSV
+      responses:
+        '200':
+          description: CSV file.
+  /reports/tickets.pdf:
+    get:
+      summary: Export visible tickets as PDF
+      responses:
+        '200':
+          description: PDF file.
+  /reports/csat.csv:
+    get:
+      summary: Export visible CSAT surveys as CSV
+      responses:
+        '200':
+          description: CSV file.
+  /reports/csat.pdf:
+    get:
+      summary: Export visible CSAT surveys as PDF
+      responses:
+        '200':
+          description: PDF file.

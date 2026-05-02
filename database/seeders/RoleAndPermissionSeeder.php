@@ -28,6 +28,16 @@ class RoleAndPermissionSeeder extends Seeder
         'tickets.close_own',
         'tickets.add_watcher',
         'tickets.manage_targets',
+        'notifications.view',
+        'ticket_views.manage',
+        'tickets.bulk_update',
+        'tickets.merge',
+        'tickets.split',
+        'knowledge_base.manage',
+        'knowledge_base.view_internal',
+        'canned_responses.manage',
+        'reports.view',
+        'csat.view',
         'issue_tracking.manage',
         'departments.manage',
         'api_tokens.manage',
@@ -58,6 +68,16 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.manage_priority',
             'tickets.add_watcher',
             'tickets.manage_targets',
+            'notifications.view',
+            'ticket_views.manage',
+            'tickets.bulk_update',
+            'tickets.merge',
+            'tickets.split',
+            'knowledge_base.manage',
+            'knowledge_base.view_internal',
+            'canned_responses.manage',
+            'reports.view',
+            'csat.view',
         ]);
 
         Role::findOrCreate(RoleName::CustomerAdmin->value, self::GUARD)->syncPermissions([
@@ -68,6 +88,10 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.comment_public',
             'tickets.close_own',
             'tickets.add_watcher',
+            'notifications.view',
+            'ticket_views.manage',
+            'reports.view',
+            'csat.view',
             'api_tokens.manage',
             'webhooks.manage',
         ]);
@@ -78,6 +102,8 @@ class RoleAndPermissionSeeder extends Seeder
             'tickets.comment_public',
             'tickets.close_own',
             'tickets.add_watcher',
+            'notifications.view',
+            'ticket_views.manage',
         ]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

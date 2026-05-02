@@ -23,6 +23,7 @@ class TicketCommentService
         private readonly TicketEventRecorder $events,
         private readonly TicketWorkflowService $workflow,
         private readonly TicketAttachmentService $attachments,
+        private readonly MentionParserService $mentions,
         private readonly HtmlSanitizer $sanitizer,
         private readonly SlaService $sla,
     ) {}
@@ -30,7 +31,7 @@ class TicketCommentService
     /**
      * @param  list<UploadedFile>  $files
      */
-    public function create(Ticket $ticket, User|ApiClient $actor, string $body, TicketVisibility $visibility, ?Request $request = null, array $files = []): TicketComment
+    public function create(Ticket $ticket, User|ApiClient $actor, string $body, TicketVisibility $visibility, ?Request $request = null, array $files = [], array $mentionedUserIds = []): TicketComment
     {
         if ($actor instanceof ApiClient && $visibility !== TicketVisibility::Public) {
             throw new AuthorizationException('API clients can only create public comments.');
@@ -46,7 +47,7 @@ class TicketCommentService
             }
         }
 
-        return DB::transaction(function () use ($ticket, $actor, $body, $visibility, $request, $files): TicketComment {
+        return DB::transaction(function () use ($ticket, $actor, $body, $visibility, $request, $files, $mentionedUserIds): TicketComment {
             $comment = TicketComment::create([
                 'company_id' => $ticket->company_id,
                 'ticket_id' => $ticket->id,
@@ -91,6 +92,10 @@ class TicketCommentService
 
             foreach ($files as $file) {
                 $this->attachments->store($ticket, $file, $actor, $visibility, $request, $comment);
+            }
+
+            if ($actor instanceof User) {
+                $this->mentions->createMentions($comment, $actor, $mentionedUserIds);
             }
 
             if ($visibility === TicketVisibility::Public) {

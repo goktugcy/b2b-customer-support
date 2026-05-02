@@ -6,6 +6,9 @@ use App\Enums\CompanyType;
 use App\Enums\RoleName;
 use App\Enums\SupportDepartmentStatus;
 use App\Models\Company;
+use App\Models\CannedResponse;
+use App\Models\KnowledgeBaseArticle;
+use App\Models\KnowledgeBaseCategory;
 use App\Models\SupportDepartment;
 use App\Models\SupportProject;
 use App\Models\TicketTracker;
@@ -84,6 +87,38 @@ class DatabaseSeeder extends Seeder
             'description' => 'Default support project.',
             'status' => 'active',
             'is_default' => true,
+        ]);
+
+        $category = KnowledgeBaseCategory::firstOrCreate([
+            'slug' => 'getting-started',
+        ], [
+            'name' => 'Getting started',
+            'visibility' => KnowledgeBaseCategory::VISIBILITY_PUBLIC,
+            'status' => KnowledgeBaseCategory::STATUS_PUBLISHED,
+            'sort_order' => 0,
+        ]);
+
+        KnowledgeBaseArticle::firstOrCreate([
+            'slug' => 'how-to-open-a-support-ticket',
+        ], [
+            'knowledge_base_category_id' => $category->id,
+            'author_user_id' => $user->id,
+            'title' => 'How to open a support ticket',
+            'excerpt' => 'Basic steps for creating a complete support request.',
+            'body' => '<p>Choose the right project, add a clear subject, and include files or screenshots when they help the support team reproduce the issue.</p>',
+            'visibility' => KnowledgeBaseArticle::VISIBILITY_PUBLIC,
+            'status' => KnowledgeBaseArticle::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+
+        CannedResponse::firstOrCreate([
+            'shortcut' => '/received',
+        ], [
+            'scope' => CannedResponse::SCOPE_GLOBAL,
+            'title' => 'Request received',
+            'body' => '<p>Hello {{requester.name}}, we received your request about {{ticket.subject}} and will follow up here.</p>',
+            'variables' => ['requester.name', 'ticket.subject'],
+            'status' => CannedResponse::STATUS_PUBLISHED,
         ]);
     }
 }

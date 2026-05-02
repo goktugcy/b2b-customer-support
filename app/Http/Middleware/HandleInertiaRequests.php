@@ -76,6 +76,11 @@ class HandleInertiaRequests extends Middleware
                         ->implode(','),
                 ],
             ],
+            'notifications' => [
+                'unread_count' => fn (): int => $user && $user->can('notifications.view')
+                    ? $user->unreadNotifications()->count()
+                    : 0,
+            ],
         ];
     }
 }

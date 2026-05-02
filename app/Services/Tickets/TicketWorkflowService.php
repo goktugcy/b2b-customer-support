@@ -6,6 +6,7 @@ use App\Enums\TicketStatus;
 use App\Models\ApiClient;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\Csat\CsatService;
 use App\Services\Sla\SlaService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class TicketWorkflowService
     public function __construct(
         private readonly TicketEventRecorder $events,
         private readonly SlaService $sla,
+        private readonly CsatService $csat,
     ) {}
 
     /**
@@ -150,6 +152,10 @@ class TicketWorkflowService
         );
 
         $this->sla->syncResolution($ticket->refresh());
+
+        if ($to === TicketStatus::Resolved && $from !== TicketStatus::Resolved) {
+            $this->csat->sendForTicket($ticket->refresh(), $actor instanceof User ? $actor : null);
+        }
 
         return $ticket->refresh();
     }

@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\Portal\ApiTokenController;
 use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\KnowledgeBaseController;
+use App\Http\Controllers\Portal\ReportController;
 use App\Http\Controllers\Portal\TicketController;
+use App\Http\Controllers\Portal\TicketSavedViewController;
 use App\Http\Controllers\Portal\UserController;
 use App\Http\Controllers\Portal\WebhookEndpointController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +23,18 @@ Route::middleware(['auth', 'verified', 'active.user', 'client.user', 'tenant'])
         Route::delete('tickets/{ticket}/watchers/{user}', [TicketController::class, 'removeWatcher'])->name('tickets.watchers.destroy');
         Route::post('tickets/{ticket}/attachments', [TicketController::class, 'attachment'])->name('tickets.attachments.store');
         Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment'])->name('tickets.comments.store');
+        Route::post('ticket-views', [TicketSavedViewController::class, 'store'])->name('ticket-views.store');
+        Route::patch('ticket-views/{ticketView}', [TicketSavedViewController::class, 'update'])->name('ticket-views.update');
+        Route::delete('ticket-views/{ticketView}', [TicketSavedViewController::class, 'destroy'])->name('ticket-views.destroy');
+
+        Route::get('knowledge-base', [KnowledgeBaseController::class, 'index'])->name('knowledge-base.index');
+        Route::get('knowledge-base/{slug}', [KnowledgeBaseController::class, 'show'])->name('knowledge-base.show');
+
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/tickets.csv', [ReportController::class, 'ticketsCsv'])->name('reports.tickets.csv');
+        Route::get('reports/tickets.pdf', [ReportController::class, 'ticketsPdf'])->name('reports.tickets.pdf');
+        Route::get('reports/csat.csv', [ReportController::class, 'csatCsv'])->name('reports.csat.csv');
+        Route::get('reports/csat.pdf', [ReportController::class, 'csatPdf'])->name('reports.csat.pdf');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');

@@ -76,6 +76,21 @@ class TicketPolicy
         return $user->isProviderUser() && $user->can('tickets.manage_targets');
     }
 
+    public function bulkUpdate(User $user): bool
+    {
+        return $user->isProviderUser() && $user->can('tickets.bulk_update');
+    }
+
+    public function merge(User $user, Ticket $ticket): bool
+    {
+        return $user->isProviderUser() && $user->can('tickets.merge');
+    }
+
+    public function split(User $user, Ticket $ticket): bool
+    {
+        return $user->isProviderUser() && $user->can('tickets.split');
+    }
+
     public function attach(User|ApiClient $actor, Ticket $ticket): bool
     {
         return $this->comment($actor, $ticket);

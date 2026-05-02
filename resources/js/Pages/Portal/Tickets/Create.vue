@@ -12,6 +12,7 @@ import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
+import CollapsibleMetaBox from '@/Components/shared/CollapsibleMetaBox.vue'
 import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
 import TagPicker from '@/Components/shared/TagPicker.vue'
@@ -145,9 +146,7 @@ const submit = () => form.post(route('portal.tickets.store'), {
       </Card>
 
       <div class="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Routing</CardTitle></CardHeader>
-          <CardContent class="space-y-4">
+        <CollapsibleMetaBox title="Routing" content-class="space-y-4">
             <div>
               <Label>Target departments</Label>
               <MultiSelectCombobox v-model="form.target_department_ids" class="mt-1" :options="departments" placeholder="Select departments" />
@@ -157,16 +156,12 @@ const submit = () => form.post(route('portal.tickets.store'), {
               <MultiSelectCombobox v-model="form.target_user_ids" class="mt-1" :options="filteredProviderUsers" placeholder="Select provider users" />
               <FieldError :message="targetErrors" />
             </div>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
 
-        <Card>
-          <CardHeader><CardTitle class="text-sm">Attachments</CardTitle></CardHeader>
-          <CardContent class="space-y-4">
+        <CollapsibleMetaBox title="Attachments" content-class="space-y-4">
             <FilePicker v-model="form.attachments" :error="attachmentErrors" />
             <Button type="submit" class="w-full" :disabled="form.processing">Submit ticket</Button>
-          </CardContent>
-        </Card>
+        </CollapsibleMetaBox>
       </div>
     </form>
   </PortalLayout>

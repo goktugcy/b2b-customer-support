@@ -13,12 +13,15 @@ use App\Http\Requests\Portal\StoreTicketRequest;
 use App\Http\Requests\Portal\StoreTicketWatcherRequest;
 use App\Models\SupportDepartment;
 use App\Models\Ticket;
+use App\Models\TicketSavedView;
 use App\Models\TicketTag;
 use App\Models\User;
 use App\Services\Tickets\IssueTrackingService;
+use App\Services\Tickets\MentionParserService;
 use App\Services\Tickets\TicketAttachmentService;
 use App\Services\Tickets\TicketCommentService;
 use App\Services\Tickets\TicketCreationService;
+use App\Services\Tickets\TicketSavedViewService;
 use App\Services\Tickets\TicketWatcherService;
 use App\Services\Tickets\TicketWorkflowService;
 use App\Support\AttachmentValidationRules;
@@ -29,7 +32,7 @@ use Inertia\Response;
 
 class TicketController extends Controller
 {
-    public function index(Request $request, IssueTrackingService $issueTracking): Response
+    public function index(Request $request, IssueTrackingService $issueTracking, TicketSavedViewService $savedViews): Response
     {
         $this->authorize('viewAny', Ticket::class);
 
@@ -70,6 +73,9 @@ class TicketController extends Controller
             'projects' => $issueTracking->projectOptions($request->user()->company),
             'trackers' => $issueTracking->trackerOptions(),
             'tags' => $issueTracking->tagOptions(),
+            'savedViews' => $savedViews->visibleTo($request->user(), TicketSavedView::SECTION_PORTAL)
+                ->map(fn (TicketSavedView $view): array => $savedViews->payload($view))
+                ->values(),
         ]);
     }
 
@@ -109,7 +115,7 @@ class TicketController extends Controller
         return redirect()->route('portal.tickets.show', $ticket)->with('success', 'Ticket created.');
     }
 
-    public function show(Request $request, Ticket $ticket, TicketWorkflowService $workflow): Response
+    public function show(Request $request, Ticket $ticket, TicketWorkflowService $workflow, MentionParserService $mentions): Response
     {
         $this->authorize('view', $ticket);
 
@@ -129,6 +135,7 @@ class TicketController extends Controller
                 'attachments' => fn ($attachments) => $attachments->where('visibility', TicketVisibility::Public->value),
             ])->oldest(),
             'attachments' => fn ($query) => $query->whereNull('comment_id')->where('visibility', TicketVisibility::Public->value),
+            'csatSurveys',
         ]);
 
         return Inertia::render('Portal/Tickets/Show', [
@@ -182,6 +189,10 @@ class TicketController extends Controller
                     'created_at' => $comment->created_at?->toISOString(),
                     'attachments' => $comment->attachments->map(fn ($attachment): array => $this->attachmentPayload($attachment))->values(),
                 ]),
+                'csat' => [
+                    'latest_rating' => $ticket->csatSurveys->sortByDesc('responded_at')->first()?->rating,
+                    'responses_count' => $ticket->csatSurveys->whereNotNull('responded_at')->count(),
+                ],
             ],
             'transitions' => $workflow->availableCustomerTransitions($ticket, $request->user()),
             'watcherUsers' => User::query()
@@ -190,6 +201,7 @@ class TicketController extends Controller
                 ->orderBy('name')
                 ->get(['public_id', 'name'])
                 ->map(fn (User $user): array => ['id' => $user->public_id, 'name' => $user->name]),
+            'mentionableUsers' => $mentions->mentionableUsers($ticket, TicketVisibility::Public),
         ]);
     }
 
@@ -204,6 +216,7 @@ class TicketController extends Controller
             TicketVisibility::Public,
             $request,
             (array) $request->file('attachments', []),
+            $request->validated('mentioned_user_ids', []),
         );
 
         return back()->with('success', 'Comment added.');

@@ -76,7 +76,7 @@ class SlaService
 
     public function syncResolution(Ticket $ticket): void
     {
-        if (! in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true)) {
+        if (! in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed, TicketStatus::Merged], true)) {
             return;
         }
 
@@ -92,7 +92,7 @@ class SlaService
 
         Ticket::query()
             ->when($company, fn ($query) => $query->where('company_id', $company->id))
-            ->whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value])
+            ->whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value, TicketStatus::Merged->value])
             ->where(function ($query) use ($now): void {
                 $query->where(function ($first) use ($now): void {
                     $first->whereNull('first_responded_at')
@@ -134,7 +134,7 @@ class SlaService
         $soon = Carbon::now()->addHours(4);
 
         if (($ticket->first_response_due_at && $ticket->first_responded_at === null && $ticket->first_response_due_at->lte($soon))
-            || ($ticket->due_at && ! in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true) && $ticket->due_at->lte($soon))) {
+            || ($ticket->due_at && ! in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed, TicketStatus::Merged], true) && $ticket->due_at->lte($soon))) {
             return 'due_soon';
         }
 

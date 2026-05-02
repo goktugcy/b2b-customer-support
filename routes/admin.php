@@ -1,12 +1,18 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\CannedResponseController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InvitationController;
 use App\Http\Controllers\Admin\IssueTrackingController;
+use App\Http\Controllers\Admin\KnowledgeBaseController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SupportDepartmentController;
+use App\Http\Controllers\Admin\TicketBulkController;
 use App\Http\Controllers\Admin\TicketController;
+use App\Http\Controllers\Admin\TicketMergeSplitController;
+use App\Http\Controllers\Admin\TicketSavedViewController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,14 +22,36 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
     ->group(function (): void {
         Route::get('/', fn () => redirect()->route('admin.home'))->name('dashboard');
 
+        Route::patch('tickets/bulk', TicketBulkController::class)->name('tickets.bulk');
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show', 'update']);
         Route::patch('tickets/{ticket}/status', [TicketController::class, 'changeStatus'])->name('tickets.status');
         Route::patch('tickets/{ticket}/assignment', [TicketController::class, 'assign'])->name('tickets.assignment');
         Route::patch('tickets/{ticket}/targets', [TicketController::class, 'updateTargets'])->name('tickets.targets');
+        Route::post('tickets/{ticket}/merge', [TicketMergeSplitController::class, 'merge'])->name('tickets.merge');
+        Route::post('tickets/{ticket}/split', [TicketMergeSplitController::class, 'split'])->name('tickets.split');
         Route::post('tickets/{ticket}/watchers', [TicketController::class, 'addWatcher'])->name('tickets.watchers.store');
         Route::delete('tickets/{ticket}/watchers/{user}', [TicketController::class, 'removeWatcher'])->name('tickets.watchers.destroy');
         Route::post('tickets/{ticket}/attachments', [TicketController::class, 'attachment'])->name('tickets.attachments.store');
         Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment'])->name('tickets.comments.store');
+        Route::post('ticket-views', [TicketSavedViewController::class, 'store'])->name('ticket-views.store');
+        Route::patch('ticket-views/{ticketView}', [TicketSavedViewController::class, 'update'])->name('ticket-views.update');
+        Route::delete('ticket-views/{ticketView}', [TicketSavedViewController::class, 'destroy'])->name('ticket-views.destroy');
+
+        Route::get('knowledge-base', [KnowledgeBaseController::class, 'index'])->name('knowledge-base.index');
+        Route::post('knowledge-base/categories', [KnowledgeBaseController::class, 'storeCategory'])->name('knowledge-base.categories.store');
+        Route::patch('knowledge-base/categories/{category}', [KnowledgeBaseController::class, 'updateCategory'])->name('knowledge-base.categories.update');
+        Route::post('knowledge-base/articles', [KnowledgeBaseController::class, 'storeArticle'])->name('knowledge-base.articles.store');
+        Route::patch('knowledge-base/articles/{article}', [KnowledgeBaseController::class, 'updateArticle'])->name('knowledge-base.articles.update');
+
+        Route::resource('canned-responses', CannedResponseController::class)
+            ->parameters(['canned-responses' => 'cannedResponse'])
+            ->only(['index', 'store', 'update', 'destroy']);
+
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/tickets.csv', [ReportController::class, 'ticketsCsv'])->name('reports.tickets.csv');
+        Route::get('reports/tickets.pdf', [ReportController::class, 'ticketsPdf'])->name('reports.tickets.pdf');
+        Route::get('reports/csat.csv', [ReportController::class, 'csatCsv'])->name('reports.csat.csv');
+        Route::get('reports/csat.pdf', [ReportController::class, 'csatPdf'])->name('reports.csat.pdf');
 
         Route::resource('departments', SupportDepartmentController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::get('issue-tracking', [IssueTrackingController::class, 'index'])->name('issue-tracking.index');

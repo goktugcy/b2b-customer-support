@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { Plus, Search } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { Plus, Save, Search } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Card from '@/Components/ui/card/Card.vue'
@@ -30,6 +32,7 @@ type TicketRow = {
   created_at: string
   sla?: string | null
 }
+type SavedView = { id: string; name: string; filters: Record<string, string>; is_shared: boolean; is_default: boolean; owner?: string }
 
 const props = defineProps<{
   tickets: Paginated<TicketRow>
@@ -38,6 +41,7 @@ const props = defineProps<{
   projects: ProjectOption[]
   trackers: TrackerOption[]
   tags: TagOption[]
+  savedViews: SavedView[]
 }>()
 
 const filter = useForm({
@@ -49,6 +53,23 @@ const filter = useForm({
   tag: props.filters.tag ?? '',
 })
 const applyFilters = () => router.get(route('portal.tickets.index'), filter.data(), { preserveState: true, replace: true })
+
+const selectedView = ref('')
+const viewForm = useForm({ name: '', filters: {}, is_shared: false, is_default: false })
+const filterKeys = ['search', 'queue', 'status', 'project', 'tracker', 'tag'] as const
+const applySavedView = () => {
+  const view = props.savedViews.find((item) => item.id === selectedView.value)
+  if (!view) return
+
+  filterKeys.forEach((key) => {
+    filter[key] = view.filters?.[key] ?? ''
+  })
+  applyFilters()
+}
+const createSavedView = () => {
+  viewForm.filters = filter.data()
+  viewForm.post(route('portal.ticket-views.store'), { preserveScroll: true, onSuccess: () => viewForm.reset() })
+}
 </script>
 
 <template>
@@ -65,6 +86,15 @@ const applyFilters = () => router.get(route('portal.tickets.index'), filter.data
 
     <Card class="mt-4">
       <CardContent class="p-4">
+        <div class="mb-3 flex flex-wrap items-center justify-end gap-2">
+          <Select v-model="selectedView" class="w-48" @change="applySavedView">
+            <option value="">Saved views</option>
+            <option v-for="view in savedViews" :key="view.id" :value="view.id">{{ view.name }}{{ view.is_shared ? ' shared' : '' }}</option>
+          </Select>
+          <Input v-model="viewForm.name" class="w-48" placeholder="New view name" />
+          <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_shared" /> Share</label>
+          <Button size="sm" variant="secondary" :disabled="!viewForm.name" @click="createSavedView"><Save class="h-4 w-4" /> Save view</Button>
+        </div>
         <div class="grid gap-3 md:grid-cols-6">
           <div class="relative md:col-span-2">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

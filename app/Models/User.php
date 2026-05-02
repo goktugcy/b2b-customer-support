@@ -83,6 +83,16 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function cannedResponses(): HasMany
+    {
+        return $this->hasMany(CannedResponse::class);
+    }
+
+    public function ticketSavedViews(): HasMany
+    {
+        return $this->hasMany(TicketSavedView::class);
+    }
+
     public function isProviderUser(): bool
     {
         return $this->company?->type === CompanyType::Provider;

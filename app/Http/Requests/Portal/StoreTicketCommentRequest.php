@@ -16,6 +16,8 @@ class StoreTicketCommentRequest extends FormRequest
     {
         return [
             'body' => ['required', 'string', 'max:20000'],
+            'mentioned_user_ids' => ['nullable', 'array', 'max:20'],
+            'mentioned_user_ids.*' => ['string', 'exists:users,public_id'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => AttachmentValidationRules::upload(required: false),
         ];

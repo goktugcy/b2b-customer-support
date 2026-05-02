@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CsatController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TicketAttachmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -28,7 +30,14 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/attachments/{ticketAttachment}/download', [TicketAttachmentController::class, 'download'])->name('attachments.download');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 });
+
+Route::get('/csat/{token}', [CsatController::class, 'show'])->name('csat.show');
+Route::post('/csat/{token}', [CsatController::class, 'submit'])->name('csat.submit');
+Route::get('/csat-thank-you', [CsatController::class, 'thankYou'])->name('csat.thank-you');
 
 require __DIR__.'/admin.php';
 require __DIR__.'/portal.php';

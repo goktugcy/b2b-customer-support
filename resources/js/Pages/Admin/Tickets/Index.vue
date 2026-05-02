@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { Filter, Plus, Search } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { Filter, Plus, Save, Search } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
+import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Card from '@/Components/ui/card/Card.vue'
@@ -33,6 +35,7 @@ type TicketRow = {
   created_at: string
   sla?: string | null
 }
+type SavedView = { id: string; name: string; filters: Record<string, string>; is_shared: boolean; is_default: boolean; owner?: string }
 
 const props = defineProps<{
   tickets: Paginated<TicketRow>
@@ -44,6 +47,8 @@ const props = defineProps<{
   tags: TagOption[]
   statuses: SelectOption[]
   priorities: SelectOption[]
+  agents: { id: string; name: string }[]
+  savedViews: SavedView[]
 }>()
 
 const filter = useForm({
@@ -62,6 +67,47 @@ const applyFilters = () => {
   router.get(route('admin.tickets.index'), filter.data(), { preserveState: true, replace: true })
 }
 
+const selectedIds = ref<string[]>([])
+const bulkTags = ref('')
+const bulkForm = useForm({
+  ticket_ids: [] as string[],
+  status: '',
+  priority: '',
+  assigned_to_user_id: '',
+  tag_names: [] as string[],
+})
+const viewForm = useForm({ name: '', filters: {}, is_shared: false, is_default: false })
+const selectedView = ref('')
+const allVisibleSelected = computed(() => props.tickets.data.length > 0 && props.tickets.data.every((ticket) => selectedIds.value.includes(ticket.id)))
+
+const filterKeys = ['search', 'queue', 'status', 'priority', 'company', 'project', 'tracker', 'category', 'tag'] as const
+const applySavedView = () => {
+  const view = props.savedViews.find((item) => item.id === selectedView.value)
+  if (!view) return
+
+  filterKeys.forEach((key) => {
+    filter[key] = view.filters?.[key] ?? ''
+  })
+  applyFilters()
+}
+const createSavedView = () => {
+  viewForm.filters = filter.data()
+  viewForm.post(route('admin.ticket-views.store'), { preserveScroll: true, onSuccess: () => viewForm.reset() })
+}
+const toggleAllVisible = () => {
+  selectedIds.value = allVisibleSelected.value ? [] : props.tickets.data.map((ticket) => ticket.id)
+}
+const runBulk = () => {
+  bulkForm.ticket_ids = [...selectedIds.value]
+  bulkForm.tag_names = bulkTags.value.split(',').map((tag) => tag.trim()).filter(Boolean)
+  bulkForm.patch(route('admin.tickets.bulk'), {
+    preserveScroll: true,
+    onSuccess: () => {
+      selectedIds.value = []
+      bulkTags.value = ''
+    },
+  })
+}
 const statusTone = (status: string) => status === 'closed' || status === 'resolved' ? 'green' : status === 'waiting_on_customer' || status === 'pending' ? 'amber' : 'blue'
 </script>
 
@@ -79,9 +125,20 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
 
     <Card class="mt-4">
       <CardHeader class="pb-3">
-        <div class="flex items-center gap-2">
-          <Filter class="h-4 w-4 text-primary" />
-          <CardTitle class="text-sm">Filters</CardTitle>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <Filter class="h-4 w-4 text-primary" />
+            <CardTitle class="text-sm">Filters</CardTitle>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <Select v-model="selectedView" class="w-48" @change="applySavedView">
+              <option value="">Saved views</option>
+              <option v-for="view in savedViews" :key="view.id" :value="view.id">{{ view.name }}{{ view.is_shared ? ' shared' : '' }}</option>
+            </Select>
+            <Input v-model="viewForm.name" class="w-48" placeholder="New view name" />
+            <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_shared" /> Share</label>
+            <Button size="sm" variant="secondary" :disabled="!viewForm.name" @click="createSavedView"><Save class="h-4 w-4" /> Save view</Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent class="p-4">
@@ -129,11 +186,33 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
       </CardContent>
     </Card>
 
+    <Card v-if="selectedIds.length" class="mt-4 border-primary/30">
+      <CardContent class="flex flex-wrap items-center gap-3 p-4">
+        <Badge tone="blue">{{ selectedIds.length }} selected</Badge>
+        <Select v-model="bulkForm.status" class="w-44">
+          <option value="">Status</option>
+          <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
+        </Select>
+        <Select v-model="bulkForm.priority" class="w-44">
+          <option value="">Priority</option>
+          <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
+        </Select>
+        <Select v-model="bulkForm.assigned_to_user_id" class="w-52">
+          <option value="">Assignment</option>
+          <option value="">Unassigned</option>
+          <option v-for="agent in agents" :key="agent.id" :value="agent.id">{{ agent.name }}</option>
+        </Select>
+        <Input v-model="bulkTags" class="w-64" placeholder="Tags, comma separated" />
+        <Button :disabled="bulkForm.processing" @click="runBulk">Apply bulk action</Button>
+      </CardContent>
+    </Card>
+
     <Card class="mt-4 overflow-hidden">
       <CardContent class="p-0">
         <Table class="table-fixed">
           <TableHeader class="bg-muted/50">
             <TableRow>
+              <TableHead class="w-10"><Checkbox :model-value="allVisibleSelected" @update:model-value="toggleAllVisible" /></TableHead>
               <TableHead class="w-[38%]">Ticket</TableHead>
               <TableHead>Company</TableHead>
               <TableHead>Project</TableHead>
@@ -143,6 +222,7 @@ const statusTone = (status: string) => status === 'closed' || status === 'resolv
           </TableHeader>
           <TableBody v-if="tickets.data.length">
             <TableRow v-for="ticket in tickets.data" :key="ticket.id">
+              <TableCell><Checkbox v-model="selectedIds" :value="ticket.id" /></TableCell>
               <TableCell>
                 <Link :href="route('admin.tickets.show', ticket.id)" class="font-medium text-foreground transition-colors hover:text-primary">
                   {{ ticket.subject }}

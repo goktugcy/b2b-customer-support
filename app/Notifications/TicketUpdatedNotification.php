@@ -20,7 +20,7 @@ class TicketUpdatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -59,5 +59,19 @@ class TicketUpdatedNotification extends Notification
             'ticket.comment.created' => 'A new public reply was added.',
             default => 'This ticket was updated.',
         };
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'event' => $this->event,
+            'ticket_id' => $this->ticket->public_id,
+            'ticket_subject' => $this->ticket->subject,
+            'subject_user' => $this->subjectUser?->name,
+            'message' => $this->line(),
+            'url' => $notifiable instanceof User && $notifiable->isProviderUser()
+                ? route('admin.tickets.show', $this->ticket)
+                : route('portal.tickets.show', $this->ticket),
+        ];
     }
 }

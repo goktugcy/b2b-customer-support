@@ -18,6 +18,10 @@ class ApiTokenController extends Controller
         'tickets:read',
         'tickets:comment',
         'attachments:create',
+        'knowledge_base:read',
+        'tickets:bulk_update',
+        'reports:read',
+        'csat:write',
     ];
 
     public function index(Request $request): Response

@@ -113,6 +113,9 @@ export type PageProps = {
       accept: string
     }
   }
+  notifications?: {
+    unread_count: number
+  }
 }
 
 type RouteFunction = {

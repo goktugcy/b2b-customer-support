@@ -32,6 +32,10 @@ class Ticket extends Model
         'requester_user_id',
         'api_client_id',
         'assigned_to_user_id',
+        'merged_into_ticket_id',
+        'merged_at',
+        'merged_by_user_id',
+        'split_from_ticket_id',
         'subject',
         'description',
         'status',
@@ -55,6 +59,7 @@ class Ticket extends Model
             'status' => TicketStatus::class,
             'priority' => TicketPriority::class,
             'source' => TicketSource::class,
+            'merged_at' => 'datetime',
             'first_response_due_at' => 'datetime',
             'due_at' => 'datetime',
             'first_responded_at' => 'datetime',
@@ -93,6 +98,31 @@ class Ticket extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'merged_into_ticket_id');
+    }
+
+    public function mergedTickets(): HasMany
+    {
+        return $this->hasMany(self::class, 'merged_into_ticket_id');
+    }
+
+    public function mergedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'merged_by_user_id');
+    }
+
+    public function splitFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'split_from_ticket_id');
+    }
+
+    public function splitTickets(): HasMany
+    {
+        return $this->hasMany(self::class, 'split_from_ticket_id');
     }
 
     public function supportProject(): BelongsTo
@@ -159,6 +189,11 @@ class Ticket extends Model
     public function events(): HasMany
     {
         return $this->hasMany(TicketEvent::class);
+    }
+
+    public function csatSurveys(): HasMany
+    {
+        return $this->hasMany(TicketCsatSurvey::class);
     }
 
     public function scopeVisibleTo(Builder $query, User|ApiClient $actor): Builder

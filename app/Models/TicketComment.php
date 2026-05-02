@@ -64,6 +64,11 @@ class TicketComment extends Model
         return $this->hasMany(TicketAttachment::class, 'comment_id');
     }
 
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(TicketCommentMention::class);
+    }
+
     public function scopeVisibleTo(Builder $query, User|ApiClient $actor): Builder
     {
         if ($actor instanceof ApiClient || ! $actor->isProviderUser()) {

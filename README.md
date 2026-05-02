@@ -12,6 +12,15 @@ Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, San
 - Invitation revoke/resend and user role/status management
 - Webhook delivery visibility, test delivery, manual retry, and secret rotation
 - API v1 ticket endpoints with idempotent ticket creation and OpenAPI documentation
+- Database + mail notification center with read/unread state
+- Personal and shared saved ticket views for admin and portal ticket lists
+- Provider bulk ticket actions for status, assignment, priority, and tags
+- Public knowledge base for portal/API clients plus provider-managed internal content
+- Provider canned responses with ticket/requester/company variables
+- Ticket comment mentions with ticket-access scoping
+- Provider ticket merge and split workflows with ticket events and audit logs
+- CSAT surveys sent on first resolution, with single-use token responses
+- Synchronous CSV/PDF exports for ticket and CSAT reports
 
 ## Setup
 
@@ -62,6 +71,8 @@ The OpenAPI description is available at [docs/openapi.yaml](docs/openapi.yaml).
 
 Ticket creation supports an optional `Idempotency-Key` header. Reusing a key with the same body returns the stored response; reusing it with a different body returns a validation error.
 
+Default API token abilities now include ticket creation/read/comment, attachment upload, public knowledge base read, company-safe bulk ticket updates, report exports, and CSAT writes.
+
 Webhook deliveries are signed with:
 
 - `X-Support-Event`
@@ -81,4 +92,4 @@ npm run build
 
 ## Roadmap
 
-Next phases should add database notification center, saved ticket views, bulk ticket actions, knowledge base, canned responses, mentions, ticket merge/split, CSAT, and PDF/CSV reports.
+The major production workflow roadmap is implemented. Future work can focus on async report scheduling, richer article approval workflows, and provider-facing API clients for operational actions.
