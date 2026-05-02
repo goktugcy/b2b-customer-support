@@ -22,6 +22,7 @@ use App\Models\TicketTag;
 use App\Models\User;
 use App\Services\CannedResponses\CannedResponseService;
 use App\Services\Content\HtmlSanitizer;
+use App\Services\Search\PostgresFullTextSearch;
 use App\Services\Tickets\IssueTrackingService;
 use App\Services\Tickets\MentionParserService;
 use App\Services\Tickets\TicketAssignmentService;
@@ -40,23 +41,22 @@ use Inertia\Response;
 
 class TicketController extends Controller
 {
-    public function index(Request $request, IssueTrackingService $issueTracking, TicketSavedViewService $savedViews): Response
+    public function index(Request $request, IssueTrackingService $issueTracking, TicketSavedViewService $savedViews, PostgresFullTextSearch $textSearch): Response
     {
         $this->authorize('viewAny', Ticket::class);
 
         $tickets = Ticket::query()
             ->visibleTo($request->user())
             ->with(['company', 'assignee', 'supportProject', 'tracker', 'category', 'tags'])
-            ->when($request->string('search')->isNotEmpty(), function ($query) use ($request): void {
+            ->when($request->string('search')->isNotEmpty(), function ($query) use ($request, $textSearch): void {
                 $rawSearch = $request->string('search')->toString();
-                $search = '%'.$rawSearch.'%';
                 $ticketNumber = ltrim($rawSearch, '#');
 
-                $query->where(function ($inner) use ($search, $ticketNumber): void {
-                    $inner->where('subject', 'like', $search)
-                        ->orWhere('description', 'like', $search)
-                        ->orWhereHas('company', fn ($company) => $company->where('name', 'like', $search))
-                        ->orWhereHas('tags', fn ($tag) => $tag->where('name', 'like', $search));
+                $query->where(function ($inner) use ($rawSearch, $ticketNumber, $textSearch): void {
+                    $textSearch->apply($inner, ['tickets.subject', 'tickets.description'], $rawSearch);
+                    $inner
+                        ->orWhereHas('company', fn ($company) => $textSearch->apply($company, ['companies.name', 'companies.slug'], $rawSearch))
+                        ->orWhereHas('tags', fn ($tag) => $textSearch->apply($tag, ['ticket_tags.name', 'ticket_tags.slug'], $rawSearch));
 
                     if (ctype_digit($ticketNumber)) {
                         $inner->orWhere('ticket_number', (int) $ticketNumber);

@@ -20,7 +20,6 @@ class TicketAttachmentService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly TicketEventRecorder $events,
-        private readonly AttachmentScanService $scanner,
     ) {}
 
     public function store(
@@ -38,14 +37,6 @@ class TicketAttachmentService
             $path = $file->store($directory, 'local');
             $absolutePath = Storage::disk('local')->path($path);
             $checksum = is_file($absolutePath) ? hash_file('sha256', $absolutePath) : null;
-            $scan = $this->scanner->scan($absolutePath);
-
-            if ($scan['status'] === 'infected') {
-                $quarantinePath = 'quarantine/'.$path;
-                Storage::disk('local')->move($path, $quarantinePath);
-                $path = $quarantinePath;
-                $scan['status'] = 'quarantined';
-            }
 
             $attachment = TicketAttachment::create([
                 'company_id' => $ticket->company_id,
@@ -59,9 +50,6 @@ class TicketAttachmentService
                 'mime_type' => $file->getClientMimeType(),
                 'size' => $file->getSize() ?: 0,
                 'checksum' => $checksum,
-                'scan_status' => $scan['status'],
-                'scan_result' => $scan['result'],
-                'scanned_at' => $scan['status'] !== 'skipped' ? now() : null,
                 'visibility' => $visibility,
                 'metadata' => [],
             ]);

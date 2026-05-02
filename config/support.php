@@ -26,10 +26,4 @@ return [
         'secret' => env('INBOUND_EMAIL_SECRET'),
         'default_company' => env('INBOUND_EMAIL_DEFAULT_COMPANY'),
     ],
-
-    'clamav' => [
-        'enabled' => (bool) env('CLAMAV_ENABLED', false),
-        'host' => env('CLAMAV_HOST', '127.0.0.1'),
-        'port' => (int) env('CLAMAV_PORT', 3310),
-    ],
 ];

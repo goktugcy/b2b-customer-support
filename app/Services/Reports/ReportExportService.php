@@ -32,31 +32,9 @@ class ReportExportService
             'expires_at' => now()->addDays(14),
         ]);
 
-        GenerateReportExport::dispatchAfterResponse($export);
+        GenerateReportExport::dispatch($export)->onQueue('reports')->afterCommit();
 
         return $export;
-    }
-
-    public function recoverStaleExports(User|ApiClient $actor): void
-    {
-        ReportExport::query()
-            ->when(
-                $actor instanceof User,
-                fn (Builder $query) => $query->where('requested_by_user_id', $actor->id),
-                fn (Builder $query) => $query->where('api_client_id', $actor->id),
-            )
-            ->where(function (Builder $query): void {
-                $query->where('status', ReportExport::STATUS_PENDING)
-                    ->orWhere(function (Builder $query): void {
-                        $query
-                            ->where('status', ReportExport::STATUS_PROCESSING)
-                            ->where('updated_at', '<=', now()->subMinutes(10));
-                    });
-            })
-            ->latest()
-            ->limit(5)
-            ->get()
-            ->each(fn (ReportExport $export) => GenerateReportExport::dispatchAfterResponse($export));
     }
 
     public function generate(ReportExport $export): void

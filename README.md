@@ -27,10 +27,10 @@ Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, San
 - Provider automation rules with trigger/condition/action execution logs
 - Provider-agnostic inbound email webhook for Mailgun/Postmark/SendGrid/generic payloads with `Message-Id` dedupe
 - Laravel Reverb/Echo private channels for live notification, ticket, report export, and webhook delivery updates
-- Global header search across tickets, comments, companies, users, and knowledge base with tenant scoping
+- Global header search across tickets, comments, companies, users, and knowledge base with tenant scoping and PostgreSQL full-text indexes where supported
 - CSAT resend/reminder support plus summary metrics on reports
 - Webhook public delivery IDs, payload viewer, custom test payloads, audit filters/detail/CSV export
-- Optional ClamAV attachment scan/quarantine fields and blocked download for quarantined files
+- Attachment security through MIME, extension, and size allowlists
 - Portal branding settings and user notification delivery preferences
 
 ## Setup
@@ -64,7 +64,18 @@ SLA breaches are marked by the scheduled command:
 php artisan support:check-sla-breaches
 ```
 
-In production, run Laravel's scheduler every minute and keep queue workers alive for the `notifications`, `webhooks`, `reports`, and `automation` queues. Start Reverb when `BROADCAST_CONNECTION=reverb`.
+In production, run Laravel's scheduler every minute and keep queue workers alive for the `default`, `notifications`, `webhooks`, `reports`, and `automation` queues. Start Reverb when `BROADCAST_CONNECTION=reverb`.
+
+```bash
+php artisan queue:work redis --queue=default,notifications,webhooks,reports,automation --tries=3 --timeout=120
+```
+
+The scheduler marks SLA breaches and requeues stale report exports:
+
+```bash
+php artisan support:check-sla-breaches
+php artisan support:recover-report-exports
+```
 
 Attachment upload validation is configured with:
 
@@ -72,9 +83,6 @@ Attachment upload validation is configured with:
 SUPPORT_ATTACHMENT_MAX_KB=20480
 SUPPORT_ATTACHMENT_ALLOWED_MIMES=text/plain,text/csv,application/pdf,image/png,image/jpeg,image/gif,application/zip,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 SUPPORT_ATTACHMENT_ALLOWED_EXTENSIONS=txt,csv,pdf,png,jpg,jpeg,gif,zip,json,docx,xlsx
-CLAMAV_ENABLED=false
-CLAMAV_HOST=127.0.0.1
-CLAMAV_PORT=3310
 ```
 
 Inbound email webhooks are available at:
@@ -125,7 +133,20 @@ The signature payload is `<timestamp>.<json-body>` using the endpoint secret.
 php artisan test
 npm run typecheck
 npm run build
+npm run e2e
 ```
+
+## Production Checklist
+
+- Configure `.env` with `APP_ENV=production`, `APP_DEBUG=false`, a stable `APP_KEY`, PostgreSQL, Redis, mail, storage, and `APP_URL`.
+- Run `php artisan migrate --force` and create the first provider admin with `php artisan support:create-provider-admin`.
+- Run a queue worker for `default,notifications,webhooks,reports,automation` and run Laravel's scheduler every minute.
+- Start Reverb only when `BROADCAST_CONNECTION=reverb`, then set `VITE_REVERB_ENABLED=true` before building assets.
+- Keep `storage/` and `bootstrap/cache/` writable by the PHP process.
+- Review attachment MIME, extension, and max-size allowlists before enabling customer uploads.
+- Verify `/up`, login, ticket create/comment, report export, webhook retry, and notification delivery after deploy.
+- Back up PostgreSQL and persisted attachment/report storage on the same retention schedule.
+- Run `php artisan test`, `npm run typecheck`, `npm run build`, and `npm run e2e` in CI before release.
 
 ## Roadmap
 

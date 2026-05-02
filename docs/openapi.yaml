@@ -231,7 +231,7 @@ paths:
   /tickets/{ticket}/attachments:
     post:
       summary: Upload a public ticket attachment
-      description: Requires `tickets:comment`. Uploads are limited by the configured attachment MIME, extension, size allowlists, and optional ClamAV scan/quarantine.
+      description: Requires `tickets:comment`. Uploads are limited by the configured attachment MIME, extension, and size allowlists.
       parameters:
         - in: path
           name: ticket

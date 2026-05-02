@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Archive, BookOpen, Edit3, Eye, FileText, History, MessageSquare, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
@@ -16,6 +16,7 @@ import FieldError from '@/Components/shared/FieldError.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
+import { slugify } from '@/lib/slug'
 
 type Category = { id: string; parent_id?: string | null; parent?: string | null; name: string; slug: string; visibility: string; status: string; sort_order: number; articles_count: number }
 type ArticleVersion = { version: number; editor?: string; status: string; visibility: string; created_at?: string }
@@ -35,6 +36,14 @@ const categoryForm = useForm({ parent_id: '', name: '', slug: '', visibility: 'p
 const articleForm = useForm({ category_id: '', title: '', slug: '', excerpt: '', body: '', visibility: 'public', status: 'draft' })
 const searchForm = useForm({ search: props.filters.search ?? '' })
 const articleVersions = computed(() => selectedArticle.value?.versions ?? [])
+
+watch(() => categoryForm.name, (name) => {
+  categoryForm.slug = slugify(name)
+})
+
+watch(() => articleForm.title, (title) => {
+  articleForm.slug = slugify(title)
+})
 
 const resetCategory = () => {
   selectedCategory.value = null
@@ -148,7 +157,7 @@ const formatDate = (value?: string) => {
               </div>
               <div>
                 <Label>Slug</Label>
-                <Input v-model="categoryForm.slug" class="mt-1" />
+                <Input v-model="categoryForm.slug" class="mt-1" readonly />
                 <FieldError :message="categoryForm.errors.slug" />
               </div>
               <div class="grid grid-cols-2 gap-2">
@@ -232,7 +241,7 @@ const formatDate = (value?: string) => {
               </div>
               <div>
                 <Label>Slug</Label>
-                <Input v-model="articleForm.slug" class="mt-1" />
+                <Input v-model="articleForm.slug" class="mt-1" readonly />
                 <FieldError :message="articleForm.errors.slug" />
               </div>
               <div>

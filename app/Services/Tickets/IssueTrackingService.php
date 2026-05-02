@@ -256,6 +256,7 @@ class IssueTrackingService
             'name' => $project->name,
             'company_id' => $project->company?->public_id,
             'company' => $project->company?->name,
+            'description' => $project->description,
             'status' => $project->status,
             'is_default' => $project->is_default,
         ];
@@ -288,6 +289,7 @@ class IssueTrackingService
             'project_id' => $category->supportProject?->public_id,
             'project' => $category->supportProject?->name,
             'company_id' => $category->supportProject?->company?->public_id,
+            'description' => $category->description,
             'status' => $category->status,
         ];
     }

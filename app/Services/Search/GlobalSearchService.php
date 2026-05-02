@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 
 class GlobalSearchService
 {
+    public function __construct(private readonly PostgresFullTextSearch $textSearch) {}
+
     public function admin(User $user, string $query): array
     {
         $term = trim($query);
@@ -57,8 +59,8 @@ class GlobalSearchService
             ->visibleTo($user)
             ->with('company')
             ->where(function (Builder $query) use ($term, $number): void {
-                $query->where('subject', 'like', '%'.$term.'%')
-                    ->orWhere('public_id', $term);
+                $this->textSearch->apply($query, ['tickets.subject', 'tickets.description'], $term);
+                $query->orWhere('public_id', $term);
 
                 if ($number > 0) {
                     $query->orWhere('ticket_number', $number);
@@ -82,7 +84,7 @@ class GlobalSearchService
         return TicketComment::query()
             ->with('ticket.company')
             ->whereHas('ticket', fn (Builder $query) => $query->visibleTo($user))
-            ->where('body', 'like', '%'.$term.'%')
+            ->where(fn (Builder $query) => $this->textSearch->apply($query, ['ticket_comments.body'], $term))
             ->latest()
             ->limit(4)
             ->get()
@@ -100,9 +102,7 @@ class GlobalSearchService
     {
         return Company::query()
             ->clients()
-            ->where(fn (Builder $query) => $query
-                ->where('name', 'like', '%'.$term.'%')
-                ->orWhere('slug', 'like', '%'.$term.'%'))
+            ->where(fn (Builder $query) => $this->textSearch->apply($query, ['companies.name', 'companies.slug'], $term))
             ->orderBy('name')
             ->limit(3)
             ->get()

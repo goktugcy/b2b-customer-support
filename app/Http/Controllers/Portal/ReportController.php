@@ -15,11 +15,9 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class ReportController extends Controller
 {
-    public function index(Request $request, CsatService $csat, ReportExportService $reports): Response
+    public function index(Request $request, CsatService $csat): Response
     {
         abort_unless($request->user()->can('reports.view'), 403);
-
-        $reports->recoverStaleExports($request->user());
 
         return Inertia::render('Portal/Reports/Index', [
             'filters' => $request->only(['status', 'priority', 'project', 'tracker', 'tag', 'from', 'to', 'sla', 'assignee', 'rating']),

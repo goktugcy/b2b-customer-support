@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3'
+import { watch } from 'vue'
 import { Building2, ExternalLink, Plus, Ticket, Users } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
@@ -14,6 +15,7 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
+import { slugify } from '@/lib/slug'
 import type { Paginated } from '@/types'
 
 type CompanyRow = {
@@ -33,6 +35,10 @@ const form = useForm({
   slug: '',
   type: 'client',
   timezone: 'UTC',
+})
+
+watch(() => form.name, (name) => {
+  form.slug = slugify(name)
 })
 
 const submit = () => form.post(route('admin.companies.store'), {
@@ -138,7 +144,7 @@ const statusTone = (status: string) => status === 'active' ? 'green' : status ==
             </div>
             <div>
               <Label>Slug</Label>
-              <Input v-model="form.slug" class="mt-1" required />
+              <Input v-model="form.slug" class="mt-1" required readonly />
               <FieldError :message="form.errors.slug" />
             </div>
             <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">

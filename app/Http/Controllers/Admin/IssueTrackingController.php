@@ -40,6 +40,7 @@ class IssueTrackingController extends Controller
                 ->map(fn (TicketTracker $tracker): array => [
                     ...$this->issueTracking->trackerPayload($tracker),
                     'description' => $tracker->description,
+                    'sort_order' => $tracker->sort_order,
                     'custom_fields' => $tracker->customFields->map(fn (TicketCustomField $field): array => $this->issueTracking->customFieldPayload($field))->values(),
                 ]),
             'categories' => $this->issueTracking->categoryOptions(),

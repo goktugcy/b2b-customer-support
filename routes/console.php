@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('support:check-sla-breaches')->everyFiveMinutes();
+Schedule::command('support:recover-report-exports')->everyTenMinutes();

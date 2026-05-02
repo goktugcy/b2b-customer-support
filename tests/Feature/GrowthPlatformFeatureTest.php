@@ -16,6 +16,7 @@ use App\Models\TicketEvent;
 use App\Models\User;
 use App\Services\Automation\AutomationRuleService;
 use App\Services\KnowledgeBase\KnowledgeBaseService;
+use App\Services\Reports\ReportExportService;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -112,6 +113,54 @@ class GrowthPlatformFeatureTest extends TestCase
 
         $this->assertSame(ReportExport::STATUS_COMPLETED, $export->fresh()->status);
         Storage::disk('local')->assertExists($export->fresh()->path);
+    }
+
+    public function test_stale_report_export_recovery_requeues_and_completes_export(): void
+    {
+        Storage::fake('local');
+        $this->seed(RoleAndPermissionSeeder::class);
+
+        $provider = Company::factory()->provider()->create();
+        $admin = User::factory()->for($provider)->create();
+        $admin->assignRole(RoleName::ProviderAdmin->value);
+        Ticket::factory()->create(['subject' => 'Recovered export']);
+
+        $export = ReportExport::create([
+            'company_id' => $provider->id,
+            'requested_by_user_id' => $admin->id,
+            'type' => 'tickets',
+            'format' => 'csv',
+            'filters' => [],
+            'status' => ReportExport::STATUS_PENDING,
+            'disk' => 'local',
+            'expires_at' => now()->addDays(14),
+        ]);
+        $export->forceFill([
+            'created_at' => now()->subMinutes(20),
+            'updated_at' => now()->subMinutes(20),
+        ])->save();
+
+        $this->artisan('support:recover-report-exports')->assertSuccessful();
+
+        $this->assertSame(ReportExport::STATUS_COMPLETED, $export->fresh()->status);
+        Storage::disk('local')->assertExists($export->fresh()->path);
+    }
+
+    public function test_report_export_without_requester_fails_with_error_message(): void
+    {
+        $export = ReportExport::create([
+            'type' => 'tickets',
+            'format' => 'csv',
+            'filters' => [],
+            'status' => ReportExport::STATUS_PENDING,
+            'disk' => 'local',
+            'expires_at' => now()->addDays(14),
+        ]);
+
+        app(ReportExportService::class)->generate($export);
+
+        $this->assertSame(ReportExport::STATUS_FAILED, $export->fresh()->status);
+        $this->assertSame('The report requester no longer exists.', $export->fresh()->error_message);
     }
 
     public function test_inbound_email_creates_ticket_and_deduplicates_message_id(): void
