@@ -13,6 +13,10 @@ import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
+import MetricCard from '@/Components/shared/MetricCard.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PageSection from '@/Components/shared/PageSection.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 
 type ExportRow = { id: string; type: string; format: string; status: string; error_message?: string | null; created_at?: string; completed_at?: string; download_url?: string | null }
 type CsatSummary = { average?: number | null; sent: number; responded: number; response_rate: number; low_scores: { id: string; rating: number; comment?: string | null; ticket?: string; subject?: string }[] }
@@ -62,7 +66,6 @@ const queueExport = (type: 'tickets' | 'csat', format: 'csv' | 'pdf') => {
   })
 }
 
-const statusTone = (status: string) => status === 'completed' ? 'green' : status === 'failed' ? 'red' : status === 'processing' ? 'blue' : 'amber'
 const directDownloadButtonClass = 'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-secondary-foreground active:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
 const completedDownloadButtonClass = 'inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:bg-primary/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
 const formatDate = (value?: string) => {
@@ -80,12 +83,13 @@ const formatDate = (value?: string) => {
 
 <template>
   <PortalLayout title="Reports">
-    <div>
-      <h2 class="text-xl font-semibold tracking-normal">Company reports</h2>
-      <p class="mt-1 text-sm text-muted-foreground">Export company tickets and CSAT responses. Queued exports refresh automatically while running.</p>
-    </div>
+    <PageHeader
+      title="Company reports"
+      description="Export company tickets and CSAT responses. Queued exports refresh automatically while running."
+      eyebrow="Workspace"
+    />
 
-    <Card class="mt-4">
+    <Card>
       <CardHeader><CardTitle class="text-sm">Filters</CardTitle></CardHeader>
       <CardContent>
         <div class="grid gap-3 md:grid-cols-4">
@@ -103,16 +107,17 @@ const formatDate = (value?: string) => {
       </CardContent>
     </Card>
 
-    <div class="mt-4 grid gap-4 md:grid-cols-4">
-      <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">CSAT average</p><p class="mt-1 text-2xl font-semibold">{{ csatSummary.average ?? '-' }}</p></CardContent></Card>
-      <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Response rate</p><p class="mt-1 text-2xl font-semibold">{{ csatSummary.response_rate }}%</p></CardContent></Card>
-      <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Sent</p><p class="mt-1 text-2xl font-semibold">{{ csatSummary.sent }}</p></CardContent></Card>
-      <Card><CardContent class="p-4"><p class="text-xs text-muted-foreground">Responded</p><p class="mt-1 text-2xl font-semibold">{{ csatSummary.responded }}</p></CardContent></Card>
+    <div class="grid gap-4 md:grid-cols-4">
+      <MetricCard label="CSAT average" :value="csatSummary.average ?? '-'" tone="blue" />
+      <MetricCard label="Response rate" :value="`${csatSummary.response_rate}%`" tone="green" />
+      <MetricCard label="Sent" :value="csatSummary.sent" />
+      <MetricCard label="Responded" :value="csatSummary.responded" tone="green" />
     </div>
 
-    <div class="mt-4 grid gap-4 xl:grid-cols-2">
-      <Card>
-        <CardContent class="space-y-4 p-5">
+    <PageSection title="Create exports" description="Queue larger report files for background processing or download the filtered result immediately.">
+      <div class="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardContent class="space-y-4 p-5">
           <div class="flex items-start gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-md border bg-secondary text-primary"><FileDown class="h-5 w-5" /></div>
             <div>
@@ -126,11 +131,11 @@ const formatDate = (value?: string) => {
             <a :href="route('portal.reports.tickets.csv', params)" :class="directDownloadButtonClass"><Download class="h-4 w-4" /> CSV</a>
             <a :href="route('portal.reports.tickets.pdf', params)" :class="directDownloadButtonClass"><Download class="h-4 w-4" /> PDF</a>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardContent class="space-y-4 p-5">
+        <Card>
+          <CardContent class="space-y-4 p-5">
           <div class="flex items-start gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-md border bg-secondary text-primary"><FileDown class="h-5 w-5" /></div>
             <div>
@@ -144,11 +149,12 @@ const formatDate = (value?: string) => {
             <a :href="route('portal.reports.csat.csv', params)" :class="directDownloadButtonClass"><Download class="h-4 w-4" /> CSV</a>
             <a :href="route('portal.reports.csat.pdf', params)" :class="directDownloadButtonClass"><Download class="h-4 w-4" /> PDF</a>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </PageSection>
 
-    <Card class="mt-4">
+    <Card>
       <CardHeader>
         <div class="flex items-center justify-between gap-3">
           <CardTitle class="text-sm">Export history</CardTitle>
@@ -172,7 +178,7 @@ const formatDate = (value?: string) => {
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <Badge :tone="statusTone(exportItem.status)">{{ exportItem.status }}</Badge>
+              <StatusBadge :status="exportItem.status" />
               <a v-if="exportItem.download_url" :href="exportItem.download_url" :class="completedDownloadButtonClass">Download</a>
             </div>
           </div>

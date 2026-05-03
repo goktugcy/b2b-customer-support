@@ -41,6 +41,7 @@ test('reports queue controls and portal screens render', async ({ page }) => {
   await page.getByRole('button', { name: 'Queue CSV' }).first().click()
   await expect(page.getByText('tickets.csv')).toBeVisible()
 
+  await page.getByLabel('Open profile menu').click()
   await page.getByRole('button', { name: 'Log out' }).click()
 
   await signIn(page, 'customer@example.com')

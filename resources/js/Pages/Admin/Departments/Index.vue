@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { AlertTriangle, Network, Pencil, Plus, Power, UserPlus, Users } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import Badge from '@/Components/ui/badge/Badge.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
@@ -11,8 +10,6 @@ import Select from '@/Components/ui/select/Select.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
-import CardHeader from '@/Components/ui/card/CardHeader.vue'
-import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import Dialog from '@/Components/ui/dialog/Dialog.vue'
 import DialogContent from '@/Components/ui/dialog/DialogContent.vue'
 import DialogDescription from '@/Components/ui/dialog/DialogDescription.vue'
@@ -21,7 +18,10 @@ import DialogHeader from '@/Components/ui/dialog/DialogHeader.vue'
 import DialogTitle from '@/Components/ui/dialog/DialogTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
+import MetricCard from '@/Components/shared/MetricCard.vue'
 import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 import type { MultiSelectOption } from '@/types'
 
 type Department = {
@@ -110,67 +110,38 @@ const disableDepartment = () => {
   })
 }
 
-const statusTone = (status: Department['status']) => status === 'active' ? 'green' : 'red'
 const initials = (name: string) => name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()
 </script>
 
 <template>
   <AdminLayout title="Departments">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-normal">Departments</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Organize provider-side teams for routing, watchers, and ticket ownership.</p>
-      </div>
-      <Button type="button" @click="openCreate">
-        <Plus class="h-4 w-4" />
-        New department
-      </Button>
+    <PageHeader
+      title="Departments"
+      description="Organize provider-side teams for routing, watchers, and ticket ownership."
+      eyebrow="Configuration"
+    >
+      <template #actions>
+        <Button type="button" @click="openCreate">
+          <Plus class="h-4 w-4" />
+          New department
+        </Button>
+      </template>
+    </PageHeader>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      <MetricCard label="Departments" :value="departments.length" :icon="Network" />
+      <MetricCard label="Active" :value="activeCount" :icon="Power" tone="green" />
+      <MetricCard label="Provider users" :value="providerUsers.length" :icon="Users" tone="blue" />
     </div>
 
-    <div class="mt-4 grid gap-4 md:grid-cols-3">
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-md border bg-secondary text-primary">
-            <Network class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-muted-foreground">Departments</p>
-            <p class="text-2xl font-semibold">{{ departments.length }}</p>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-md border bg-secondary text-primary">
-            <Power class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-muted-foreground">Active</p>
-            <p class="text-2xl font-semibold">{{ activeCount }}</p>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex h-10 w-10 items-center justify-center rounded-md border bg-secondary text-primary">
-            <Users class="h-5 w-5" />
-          </div>
-          <div>
-            <p class="text-xs text-muted-foreground">Provider users</p>
-            <p class="text-2xl font-semibold">{{ providerUsers.length }}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-
-    <div v-if="departments.length" class="mt-4 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+    <div v-if="departments.length" class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
       <Card v-for="department in departments" :key="department.id" class="transition-colors hover:border-primary/30">
         <CardContent class="space-y-5 p-5">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="truncate text-base font-semibold">{{ department.name }}</h3>
-                <Badge :tone="statusTone(department.status)">{{ department.status }}</Badge>
+                <StatusBadge :status="department.status" />
               </div>
               <p class="mt-2 line-clamp-2 text-sm text-muted-foreground">
                 {{ department.description || 'No department description yet.' }}

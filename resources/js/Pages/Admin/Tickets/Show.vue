@@ -22,6 +22,9 @@ import RichContent from '@/Components/shared/RichContent.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
 import TagPicker from '@/Components/shared/TagPicker.vue'
 import CustomFieldForm from '@/Components/shared/CustomFieldForm.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PriorityBadge from '@/Components/shared/PriorityBadge.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 import type { CategoryOption, CustomFieldDefinition, CustomFieldValues, MultiSelectOption, ProjectOption, SelectOption, TagOption, TrackerOption } from '@/types'
 
 type Attachment = { id: string; filename: string; size: number; visibility?: string; url: string }
@@ -171,12 +174,25 @@ const uploadAttachments = () => {
 
 <template>
   <AdminLayout :title="pageTitle">
-    <div class="mb-2">
-      <Link :href="route('admin.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
-        <ArrowLeft class="h-4 w-4" />
-        Back to tickets
-      </Link>
-    </div>
+    <PageHeader
+      :title="`${ticket.display_id} · ${ticket.subject}`"
+      :description="`${ticket.company} · ${ticket.project || 'General'} · ${ticket.requester || 'No requester'}`"
+      eyebrow="Ticket detail"
+    >
+      <template #meta>
+        <div class="flex flex-wrap gap-2">
+          <StatusBadge :status="ticket.status" />
+          <PriorityBadge :priority="ticket.priority" />
+          <Badge v-if="ticket.tracker" tone="neutral">{{ ticket.tracker }}</Badge>
+        </div>
+      </template>
+      <template #actions>
+        <Link :href="route('admin.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
+          <ArrowLeft class="h-4 w-4" />
+          Back to tickets
+        </Link>
+      </template>
+    </PageHeader>
 
     <section class="grid gap-6 xl:grid-cols-[1fr_380px]">
       <div class="space-y-6">
@@ -184,12 +200,12 @@ const uploadAttachments = () => {
           <CardHeader>
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <CardTitle class="text-xl">{{ ticket.display_id }} · {{ ticket.subject }}</CardTitle>
+                <CardTitle class="text-xl">{{ ticket.subject }}</CardTitle>
                 <p class="mt-1 text-sm text-muted-foreground">{{ ticket.company }} · {{ ticket.project || 'General' }} · {{ ticket.requester || 'No requester' }}</p>
               </div>
               <div class="flex gap-2">
-                <Badge tone="blue">{{ ticket.status }}</Badge>
-                <Badge tone="neutral">{{ ticket.priority }}</Badge>
+                <StatusBadge :status="ticket.status" />
+                <PriorityBadge :priority="ticket.priority" />
               </div>
             </div>
           </CardHeader>

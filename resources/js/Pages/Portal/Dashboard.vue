@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3'
-import { Activity, BarChart3, Clock3 } from 'lucide-vue-next'
+import { Activity, AlertTriangle, BarChart3, Clock3, Inbox } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Card from '@/Components/ui/card/Card.vue'
@@ -8,6 +8,9 @@ import CardContent from '@/Components/ui/card/CardContent.vue'
 import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import CardDescription from '@/Components/ui/card/CardDescription.vue'
+import MetricCard from '@/Components/shared/MetricCard.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PageSection from '@/Components/shared/PageSection.vue'
 
 type Metrics = {
   summary: Record<string, number>
@@ -24,25 +27,54 @@ const percentage = (items: Record<string, number>, value: number) => {
 
   return count > 0 ? Math.round((value / count) * 100) : 0
 }
+
+const metricHref = (key: string) => {
+  if (key.includes('overdue')) return route('portal.tickets.index', { queue: 'overdue' })
+  if (key.includes('due_soon')) return route('portal.tickets.index', { queue: 'due_soon' })
+  if (key.includes('open')) return route('portal.tickets.index', { status: 'open' })
+  if (key.includes('resolved')) return route('portal.tickets.index', { status: 'resolved' })
+
+  return route('portal.tickets.index')
+}
+
+const metricTone = (key: string) => {
+  if (key.includes('overdue')) return 'red'
+  if (key.includes('due_soon')) return 'amber'
+  if (key.includes('resolved')) return 'green'
+
+  return 'neutral'
+}
+
+const metricIcon = (key: string) => {
+  if (key.includes('overdue') || key.includes('due_soon')) return AlertTriangle
+  if (key.includes('open') || key.includes('resolved')) return Inbox
+
+  return Activity
+}
 </script>
 
 <template>
   <PortalLayout title="Dashboard">
+    <PageHeader
+      title="Workspace dashboard"
+      description="Track open requests, SLA risk, and the latest customer-side ticket activity."
+      eyebrow="Client portal"
+    />
+
     <div class="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-      <Card v-for="(value, key) in metrics.summary" :key="key">
-        <CardContent class="p-4">
-          <div class="flex items-center justify-between gap-3">
-            <p class="truncate text-xs font-medium uppercase text-muted-foreground">{{ label(String(key)) }}</p>
-            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Activity class="h-4 w-4" />
-            </span>
-          </div>
-          <p class="mt-3 text-3xl font-semibold tracking-normal">{{ value }}</p>
-        </CardContent>
-      </Card>
+      <MetricCard
+        v-for="(value, key) in metrics.summary"
+        :key="key"
+        :label="label(String(key))"
+        :value="value"
+        :href="metricHref(String(key))"
+        :tone="metricTone(String(key))"
+        :icon="metricIcon(String(key))"
+      />
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[360px_1fr]">
+    <PageSection title="Ticket health" description="A compact view of workload mix and recent activity in your company workspace.">
+      <div class="grid gap-6 lg:grid-cols-[360px_1fr]">
       <Card>
         <CardHeader>
           <div class="flex items-center gap-2">
@@ -84,6 +116,7 @@ const percentage = (items: Record<string, number>, value: number) => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </PageSection>
   </PortalLayout>
 </template>

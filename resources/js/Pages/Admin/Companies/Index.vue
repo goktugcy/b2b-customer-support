@@ -15,6 +15,8 @@ import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 import { slugify } from '@/lib/slug'
 import type { Paginated } from '@/types'
 
@@ -47,19 +49,17 @@ const submit = () => form.post(route('admin.companies.store'), {
 })
 
 const typeTone = (type: string) => type === 'provider' ? 'blue' : 'green'
-const statusTone = (status: string) => status === 'active' ? 'green' : status === 'disabled' ? 'red' : 'amber'
 </script>
 
 <template>
   <AdminLayout title="Companies">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-normal">Companies</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Manage provider and client workspaces, usage, and account access.</p>
-      </div>
-    </div>
+    <PageHeader
+      title="Companies"
+      description="Manage provider and client workspaces, account structure, and support usage."
+      eyebrow="Customers"
+    />
 
-    <section class="mt-4 grid gap-6 xl:grid-cols-[1fr_360px]">
+    <section class="grid gap-6 xl:grid-cols-[1fr_360px]">
       <div class="space-y-4">
         <div v-if="companies.data.length" class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           <Card
@@ -89,7 +89,7 @@ const statusTone = (status: string) => status === 'active' ? 'green' : status ==
 
               <div class="flex flex-wrap gap-2">
                 <Badge :tone="typeTone(company.type)">{{ company.type }}</Badge>
-                <Badge :tone="statusTone(company.status)">{{ company.status }}</Badge>
+                <StatusBadge :status="company.status" />
               </div>
 
               <div class="grid grid-cols-2 gap-3">

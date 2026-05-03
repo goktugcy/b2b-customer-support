@@ -57,7 +57,7 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             boxShadow: {
-                panel: '0 1px 2px rgb(15 23 42 / 0.06), 0 18px 45px rgb(15 23 42 / 0.05)',
+                panel: '0 1px 2px rgb(15 23 42 / 0.05), 0 12px 32px rgb(15 23 42 / 0.04)',
             },
         },
     },

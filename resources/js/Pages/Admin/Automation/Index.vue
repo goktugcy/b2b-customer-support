@@ -2,7 +2,6 @@
 import { router, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
-import Badge from '@/Components/ui/badge/Badge.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
 import CardHeader from '@/Components/ui/card/CardHeader.vue'
@@ -12,6 +11,9 @@ import Label from '@/Components/ui/label/Label.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
 import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PageSection from '@/Components/shared/PageSection.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 
 type Rule = { id: string; company_id?: string | null; company: string; name: string; trigger: string; conditions: unknown; actions: unknown; enabled: boolean; priority: number; last_run_at?: string | null }
 type Execution = { id: number; rule?: string | null; ticket?: string | null; ticket_subject?: string | null; company?: string | null; trigger: string; status: string; error_message?: string | null; executed_at?: string | null }
@@ -42,12 +44,13 @@ const deleteRule = (rule: Rule) => router.delete(route('admin.automation-rules.d
 
 <template>
   <AdminLayout title="Automation">
-    <div>
-      <h2 class="text-xl font-semibold tracking-normal">Automation rules</h2>
-      <p class="mt-1 text-sm text-muted-foreground">Run simple ticket actions when operational events happen.</p>
-    </div>
+    <PageHeader
+      title="Automation rules"
+      description="Run simple ticket actions when operational events happen."
+      eyebrow="Automation"
+    />
 
-    <section class="mt-4 grid gap-4 xl:grid-cols-[420px_1fr]">
+    <section class="grid gap-4 xl:grid-cols-[420px_1fr]">
       <Card>
         <CardHeader><CardTitle class="text-sm">New rule</CardTitle></CardHeader>
         <CardContent>
@@ -69,7 +72,8 @@ const deleteRule = (rule: Rule) => router.delete(route('admin.automation-rules.d
       </Card>
 
       <div class="space-y-4">
-        <Card>
+        <PageSection title="Rules" description="Ordered provider automations scoped by company and trigger.">
+          <Card>
           <CardHeader><CardTitle class="text-sm">Rules</CardTitle></CardHeader>
           <CardContent>
             <div class="divide-y">
@@ -79,16 +83,18 @@ const deleteRule = (rule: Rule) => router.delete(route('admin.automation-rules.d
                   <p class="text-xs text-muted-foreground">{{ rule.trigger }} · {{ rule.company }} · priority {{ rule.priority }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <Badge :tone="rule.enabled ? 'green' : 'neutral'">{{ rule.enabled ? 'enabled' : 'disabled' }}</Badge>
+                  <StatusBadge :status="rule.enabled ? 'enabled' : 'disabled'" />
                   <Button size="sm" variant="secondary" @click="toggleRule(rule)">{{ rule.enabled ? 'Disable' : 'Enable' }}</Button>
                   <Button size="sm" variant="ghost" @click="deleteRule(rule)">Delete</Button>
                 </div>
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </PageSection>
 
-        <Card>
+        <PageSection title="Execution log" description="Recent automation runs and failures.">
+          <Card>
           <CardHeader><CardTitle class="text-sm">Execution log</CardTitle></CardHeader>
           <CardContent>
             <div class="divide-y">
@@ -98,12 +104,13 @@ const deleteRule = (rule: Rule) => router.delete(route('admin.automation-rules.d
                   <p class="text-xs text-muted-foreground">{{ execution.ticket }} {{ execution.ticket_subject }} · {{ execution.trigger }}</p>
                   <p v-if="execution.error_message" class="mt-1 text-xs text-destructive">{{ execution.error_message }}</p>
                 </div>
-                <Badge :tone="execution.status === 'completed' ? 'green' : execution.status === 'failed' ? 'red' : 'amber'">{{ execution.status }}</Badge>
+                <StatusBadge :status="execution.status" />
                 <span class="text-xs text-muted-foreground">{{ execution.executed_at }}</span>
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </PageSection>
       </div>
     </section>
   </AdminLayout>

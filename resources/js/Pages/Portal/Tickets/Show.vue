@@ -18,6 +18,9 @@ import CollapsibleMetaBox from '@/Components/shared/CollapsibleMetaBox.vue'
 import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PriorityBadge from '@/Components/shared/PriorityBadge.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 import type { MultiSelectOption, SelectOption } from '@/types'
 
 type Attachment = { id: string; filename: string; size: number; url: string }
@@ -104,17 +107,31 @@ const uploadAttachments = () => {
 
 <template>
   <PortalLayout :title="pageTitle">
-    <Link :href="route('portal.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
-      <ArrowLeft class="h-4 w-4" />
-      Back to tickets
-    </Link>
-    <section class="mt-4 grid gap-6 lg:grid-cols-[1fr_340px]">
+    <PageHeader
+      :title="`${ticket.display_id} · ${ticket.subject}`"
+      :description="`${ticket.project || 'General'} · ${ticket.assignee || 'Unassigned'}`"
+      eyebrow="Ticket detail"
+    >
+      <template #meta>
+        <div class="flex flex-wrap gap-2">
+          <StatusBadge :status="ticket.status" />
+          <PriorityBadge :priority="ticket.priority" />
+        </div>
+      </template>
+      <template #actions>
+        <Link :href="route('portal.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
+          <ArrowLeft class="h-4 w-4" />
+          Back to tickets
+        </Link>
+      </template>
+    </PageHeader>
+    <section class="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div class="space-y-6">
         <Card>
           <CardHeader>
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle class="text-xl">{{ ticket.display_id }} · {{ ticket.subject }}</CardTitle>
-              <div class="flex gap-2"><Badge tone="blue">{{ ticket.status }}</Badge><Badge>{{ ticket.priority }}</Badge></div>
+              <CardTitle class="text-xl">{{ ticket.subject }}</CardTitle>
+              <div class="flex gap-2"><StatusBadge :status="ticket.status" /><PriorityBadge :priority="ticket.priority" /></div>
             </div>
           </CardHeader>
           <CardContent>

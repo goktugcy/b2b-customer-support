@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3'
+import { KeyRound, Link2, Palette, ShieldCheck, Users } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
 import Button from '@/Components/ui/button/Button.vue'
@@ -9,6 +10,11 @@ import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
+import Avatar from '@/Components/ui/avatar/Avatar.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PageSection from '@/Components/shared/PageSection.vue'
+import PriorityBadge from '@/Components/shared/PriorityBadge.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 
 type Company = {
   id: string
@@ -47,6 +53,20 @@ const saveBranding = (company: Company) => {
 
 <template>
   <AdminLayout :title="company.name">
+    <PageHeader
+      :title="company.name"
+      description="Workspace profile, portal branding, SLA policies, users, and integration surface."
+      eyebrow="Company detail"
+    >
+      <template #meta>
+        <div class="flex flex-wrap gap-2">
+          <Badge>{{ company.type }}</Badge>
+          <StatusBadge :status="company.status" />
+          <Badge tone="neutral">{{ company.timezone }}</Badge>
+        </div>
+      </template>
+    </PageHeader>
+
     <div class="grid gap-6 lg:grid-cols-3">
       <Card class="lg:col-span-1">
         <CardHeader><CardTitle class="text-sm">Company</CardTitle></CardHeader>
@@ -54,73 +74,127 @@ const saveBranding = (company: Company) => {
           <dl class="space-y-3 text-sm">
             <div><dt class="text-muted-foreground">Slug</dt><dd class="font-medium">{{ company.slug }}</dd></div>
             <div><dt class="text-muted-foreground">Type</dt><dd><Badge>{{ company.type }}</Badge></dd></div>
-            <div><dt class="text-muted-foreground">Status</dt><dd><Badge tone="green">{{ company.status }}</Badge></dd></div>
+            <div><dt class="text-muted-foreground">Status</dt><dd><StatusBadge :status="company.status" /></dd></div>
             <div><dt class="text-muted-foreground">Timezone</dt><dd class="font-medium">{{ company.timezone }}</dd></div>
           </dl>
         </CardContent>
       </Card>
       <Card class="lg:col-span-2">
-        <CardHeader><CardTitle class="text-sm">Users</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-sm">
+            <Users class="h-4 w-4 text-primary" />
+            Users
+          </CardTitle>
+        </CardHeader>
         <CardContent>
-          <div class="divide-y">
-            <div v-for="user in company.users" :key="user.id" class="py-3 text-sm first:pt-0 last:pb-0">
-              <p class="font-medium">{{ user.name }}</p>
-              <p class="text-muted-foreground">{{ user.email }} · {{ user.roles.join(', ') || 'No role' }}</p>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div v-for="user in company.users" :key="user.id" class="flex min-w-0 items-center gap-3 rounded-md border bg-background/70 p-3 text-sm">
+              <Avatar :name="user.name" class="h-9 w-9" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-medium">{{ user.name }}</p>
+                <p class="truncate text-muted-foreground">{{ user.email }}</p>
+              </div>
+              <StatusBadge :status="user.status" />
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
 
-    <Card v-if="company.type === 'client'" class="mt-6">
-      <CardHeader><CardTitle class="text-sm">Portal branding</CardTitle></CardHeader>
-      <CardContent>
-        <form class="grid gap-3 md:grid-cols-4" @submit.prevent="saveBranding(company)">
-          <label class="space-y-1">
-            <span class="text-xs text-muted-foreground">Display name</span>
-            <Input v-model="brandingForm.display_name" />
-          </label>
-          <label class="space-y-1">
-            <span class="text-xs text-muted-foreground">Logo URL</span>
-            <Input v-model="brandingForm.logo_url" />
-          </label>
-          <label class="space-y-1">
-            <span class="text-xs text-muted-foreground">Brand color</span>
-            <Input v-model="brandingForm.brand_color" type="color" />
-          </label>
-          <label class="space-y-1">
-            <span class="text-xs text-muted-foreground">Timezone</span>
-            <Input v-model="brandingForm.timezone" />
-          </label>
-          <div class="md:col-span-4 flex justify-end">
-            <Button type="submit" :disabled="brandingForm.processing">Save branding</Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <PageSection v-if="company.type === 'client'" title="Portal branding" description="Customer-facing identity used in the portal shell.">
+      <Card>
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-sm">
+            <Palette class="h-4 w-4 text-primary" />
+            Branding settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="grid gap-3 md:grid-cols-4" @submit.prevent="saveBranding(company)">
+            <label class="space-y-1">
+              <span class="text-xs text-muted-foreground">Display name</span>
+              <Input v-model="brandingForm.display_name" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-xs text-muted-foreground">Logo URL</span>
+              <Input v-model="brandingForm.logo_url" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-xs text-muted-foreground">Brand color</span>
+              <Input v-model="brandingForm.brand_color" type="color" />
+            </label>
+            <label class="space-y-1">
+              <span class="text-xs text-muted-foreground">Timezone</span>
+              <Input v-model="brandingForm.timezone" />
+            </label>
+            <div class="flex justify-end md:col-span-4">
+              <Button type="submit" :disabled="brandingForm.processing">Save branding</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </PageSection>
 
-    <Card v-if="company.type === 'client'" class="mt-6">
-      <CardHeader><CardTitle class="text-sm">SLA policies</CardTitle></CardHeader>
-      <CardContent>
-        <div class="space-y-3">
-          <div v-for="policy in company.sla_policies" :key="policy.id" class="grid gap-3 rounded-md border bg-background/70 p-3 text-sm md:grid-cols-[120px_1fr_1fr_100px_auto]">
-            <div class="font-medium capitalize">{{ policy.priority }}</div>
-            <label class="space-y-1">
-              <span class="text-xs text-muted-foreground">First response minutes</span>
-              <Input v-model.number="policy.first_response_minutes" type="number" min="1" />
-            </label>
-            <label class="space-y-1">
-              <span class="text-xs text-muted-foreground">Resolution minutes</span>
-              <Input v-model.number="policy.resolution_minutes" type="number" min="1" />
-            </label>
-            <label class="flex items-center gap-2 self-end">
-              <Checkbox v-model="policy.enabled" />
-              Enabled
-            </label>
-            <Button type="button" class="self-end" variant="secondary" @click="saveSla(company, policy)">Save</Button>
+    <PageSection v-if="company.type === 'client'" title="SLA policies" description="24/7 first-response and resolution targets by priority.">
+      <Card>
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-sm">
+            <ShieldCheck class="h-4 w-4 text-primary" />
+            Policy matrix
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="space-y-3">
+            <div v-for="policy in company.sla_policies" :key="policy.id" class="grid gap-3 rounded-md border bg-background/70 p-3 text-sm md:grid-cols-[120px_1fr_1fr_100px_auto]">
+              <div class="self-center"><PriorityBadge :priority="policy.priority" /></div>
+              <label class="space-y-1">
+                <span class="text-xs text-muted-foreground">First response minutes</span>
+                <Input v-model.number="policy.first_response_minutes" type="number" min="1" />
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs text-muted-foreground">Resolution minutes</span>
+                <Input v-model.number="policy.resolution_minutes" type="number" min="1" />
+              </label>
+              <label class="flex items-center gap-2 self-end">
+                <Checkbox v-model="policy.enabled" />
+                Enabled
+              </label>
+              <Button type="button" class="self-end" variant="secondary" @click="saveSla(company, policy)">Save</Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </PageSection>
+
+    <PageSection title="Integrations" description="Company API clients and webhook endpoints.">
+      <div class="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle class="flex items-center gap-2 text-sm"><KeyRound class="h-4 w-4 text-primary" />API clients</CardTitle></CardHeader>
+          <CardContent class="space-y-2">
+            <div v-for="client in company.api_clients" :key="client.id" class="rounded-md border bg-background/70 p-3 text-sm">
+              <div class="flex items-center justify-between gap-3">
+                <p class="truncate font-medium">{{ client.name }}</p>
+                <StatusBadge :status="client.status" />
+              </div>
+              <p class="mt-1 text-xs text-muted-foreground">Last used {{ client.last_used_at || 'never' }}</p>
+            </div>
+            <p v-if="!company.api_clients.length" class="text-sm text-muted-foreground">No API clients yet.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle class="flex items-center gap-2 text-sm"><Link2 class="h-4 w-4 text-primary" />Webhooks</CardTitle></CardHeader>
+          <CardContent class="space-y-2">
+            <div v-for="webhook in company.webhooks" :key="webhook.id" class="rounded-md border bg-background/70 p-3 text-sm">
+              <div class="flex items-center justify-between gap-3">
+                <p class="truncate font-medium">{{ webhook.url }}</p>
+                <StatusBadge :status="webhook.status" />
+              </div>
+              <p class="mt-1 truncate text-xs text-muted-foreground">{{ webhook.events.join(', ') || 'No events' }}</p>
+            </div>
+            <p v-if="!company.webhooks.length" class="text-sm text-muted-foreground">No webhooks yet.</p>
+          </CardContent>
+        </Card>
+      </div>
+    </PageSection>
   </AdminLayout>
 </template>

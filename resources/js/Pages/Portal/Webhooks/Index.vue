@@ -5,7 +5,6 @@ import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
-import Badge from '@/Components/ui/badge/Badge.vue'
 import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
@@ -13,6 +12,8 @@ import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 
 type Delivery = { id: string; event_type: string; status: string; attempts: number; response_status?: number; response_body_excerpt?: string; payload?: unknown; next_attempt_at?: string; delivered_at?: string; created_at?: string }
 type Endpoint = { id: number; public_id: string; url: string; status: string; events: string[]; failure_count: number; deliveries_count: number; last_success_at?: string; last_failure_at?: string; deliveries: Delivery[] }
@@ -29,6 +30,12 @@ const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(ro
 
 <template>
   <PortalLayout title="Webhooks">
+    <PageHeader
+      title="Webhooks"
+      description="Deliver ticket and support events to your integration endpoints with test, retry, and secret rotation controls."
+      eyebrow="Integrations"
+    />
+
     <section class="grid gap-6 lg:grid-cols-[1fr_360px]">
       <Card>
         <CardHeader><CardTitle class="text-sm">Endpoints</CardTitle></CardHeader>
@@ -41,7 +48,7 @@ const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(ro
                   <p class="mt-1 text-muted-foreground">{{ endpoint.events.join(', ') }} · {{ endpoint.deliveries_count }} deliveries</p>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
-                  <Badge :tone="endpoint.status === 'active' ? 'green' : 'red'">{{ endpoint.status }}</Badge>
+                  <StatusBadge :status="endpoint.status" />
                   <Button type="button" size="sm" variant="secondary" @click="testEndpoint(endpoint)">Test</Button>
                   <Button type="button" size="sm" variant="secondary" @click="rotateSecret(endpoint)">Rotate</Button>
                   <Link :href="route('portal.webhooks.destroy', endpoint.public_id)" method="delete" as="button" class="text-sm font-medium text-destructive">Disable</Link>
@@ -54,7 +61,7 @@ const retryDelivery = (endpoint: Endpoint, delivery: Delivery) => router.post(ro
                     <p class="truncate text-muted-foreground">{{ delivery.response_body_excerpt || delivery.created_at }}</p>
                     <pre v-if="delivery.payload" class="mt-2 max-h-40 overflow-auto rounded-md bg-muted p-2 text-[11px]">{{ JSON.stringify(delivery.payload, null, 2) }}</pre>
                   </div>
-                  <Badge :tone="delivery.status === 'success' ? 'green' : delivery.status === 'failed' ? 'red' : 'amber'">{{ delivery.status }}</Badge>
+                  <StatusBadge :status="delivery.status" />
                   <span class="text-muted-foreground">{{ delivery.response_status || '-' }}</span>
                   <span class="text-muted-foreground">{{ delivery.attempts }} attempt(s)</span>
                   <Button type="button" size="sm" variant="secondary" @click="retryDelivery(endpoint, delivery)">Retry</Button>

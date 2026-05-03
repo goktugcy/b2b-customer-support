@@ -13,6 +13,7 @@ import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue'
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
 import type { PageProps } from '@/types'
 
 const props = defineProps<{
@@ -48,6 +49,12 @@ const saveNotifications = () => notificationForm.patch(route('profile.notificati
   <Head title="Profile" />
 
   <component :is="layoutComponent" title="Profile">
+    <PageHeader
+      title="Profile settings"
+      description="Manage account identity, password, notification delivery, and access removal."
+      eyebrow="Account"
+    />
+
     <div class="grid gap-6 xl:grid-cols-[1fr_380px]">
       <div class="space-y-6">
         <Card>

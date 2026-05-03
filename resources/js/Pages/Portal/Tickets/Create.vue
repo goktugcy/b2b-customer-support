@@ -14,6 +14,7 @@ import FieldError from '@/Components/shared/FieldError.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
 import CollapsibleMetaBox from '@/Components/shared/CollapsibleMetaBox.vue'
 import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
 import TagPicker from '@/Components/shared/TagPicker.vue'
 import CustomFieldForm from '@/Components/shared/CustomFieldForm.vue'
@@ -77,6 +78,12 @@ const submit = () => form.post(route('portal.tickets.store'), {
 
 <template>
   <PortalLayout title="Create ticket">
+    <PageHeader
+      title="Create support request"
+      description="Send a clear request with priority, taxonomy, routing preferences, and supporting files."
+      eyebrow="Workspace"
+    />
+
     <form class="grid gap-6 lg:grid-cols-[1fr_340px]" @submit.prevent="submit">
       <Card>
         <CardHeader>

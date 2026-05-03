@@ -5,6 +5,7 @@ import GuestLayout from '@/Layouts/GuestLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
+import CardDescription from '@/Components/ui/card/CardDescription.vue'
 import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
@@ -24,16 +25,16 @@ const form = useForm({ rating: 0, comment: '' })
     <Card class="w-full max-w-xl">
       <CardHeader>
         <CardTitle>Rate your support experience</CardTitle>
-        <p class="text-sm text-muted-foreground">{{ ticket.display_id ? `${ticket.display_id} · ${ticket.subject}` : ticket.subject }}</p>
+        <CardDescription>{{ ticket.display_id ? `${ticket.display_id} · ${ticket.subject}` : ticket.subject }}</CardDescription>
       </CardHeader>
       <CardContent>
         <form class="space-y-5" @submit.prevent="form.post(route('csat.submit', token))">
-          <div class="flex gap-2">
+          <div class="grid grid-cols-5 gap-2">
             <button
               v-for="rating in [1, 2, 3, 4, 5]"
               :key="rating"
               type="button"
-              class="flex h-12 w-12 items-center justify-center rounded-md border transition-colors"
+              class="flex h-12 items-center justify-center rounded-md border transition-colors"
               :class="rating <= form.rating ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-secondary'"
               @click="form.rating = rating"
             >

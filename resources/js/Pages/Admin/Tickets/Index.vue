@@ -5,12 +5,10 @@ import {
   Building2,
   CheckSquare,
   Clock3,
-  Filter,
   Plus,
   RefreshCw,
   Save,
   Search,
-  SlidersHorizontal,
   Star,
   Tag,
   Trash2,
@@ -23,9 +21,24 @@ import Checkbox from '@/Components/ui/checkbox/Checkbox.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Card from '@/Components/ui/card/Card.vue'
-import CardContent from '@/Components/ui/card/CardContent.vue'
+import Tabs from '@/Components/ui/tabs/Tabs.vue'
+import TabsList from '@/Components/ui/tabs/TabsList.vue'
+import TabsTrigger from '@/Components/ui/tabs/TabsTrigger.vue'
+import DropdownMenu from '@/Components/ui/dropdown-menu/DropdownMenu.vue'
+import DropdownMenuContent from '@/Components/ui/dropdown-menu/DropdownMenuContent.vue'
+import DropdownMenuItem from '@/Components/ui/dropdown-menu/DropdownMenuItem.vue'
+import DropdownMenuLabel from '@/Components/ui/dropdown-menu/DropdownMenuLabel.vue'
+import DropdownMenuSeparator from '@/Components/ui/dropdown-menu/DropdownMenuSeparator.vue'
+import DropdownMenuTrigger from '@/Components/ui/dropdown-menu/DropdownMenuTrigger.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
+import DataToolbar from '@/Components/shared/DataToolbar.vue'
+import FilterSheet from '@/Components/shared/FilterSheet.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import PriorityBadge from '@/Components/shared/PriorityBadge.vue'
+import ResponsiveList from '@/Components/shared/ResponsiveList.vue'
+import SlaBadge from '@/Components/shared/SlaBadge.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 import type { CategoryOption, Paginated, ProjectOption, SelectOption, TagOption, TrackerOption } from '@/types'
 
 type TicketRow = {
@@ -104,6 +117,11 @@ const applyFilters = () => {
   router.get(route('admin.tickets.index'), filter.data(), { preserveState: true, replace: true })
 }
 
+const applyFiltersAndClose = () => {
+  advancedOpen.value = false
+  applyFilters()
+}
+
 const setQueue = (queue: string) => {
   filter.queue = queue
   applyFilters()
@@ -113,6 +131,7 @@ const resetFilters = () => {
   filterKeys.forEach((key) => {
     filter[key] = ''
   })
+  advancedOpen.value = false
   applyFilters()
 }
 
@@ -188,100 +207,120 @@ onMounted(() => {
 
 <template>
   <AdminLayout title="Tickets">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-normal">Ticket operations</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Triage customer requests by queue, ownership, SLA risk, and taxonomy.</p>
+    <PageHeader
+      title="Ticket operations"
+      description="Triage customer requests by queue, ownership, SLA risk, and taxonomy."
+      eyebrow="Operations"
+    >
+      <template #actions>
+        <Link :href="route('admin.tickets.create')">
+          <Button><Plus class="h-4 w-4" /> Create ticket</Button>
+        </Link>
+      </template>
+    </PageHeader>
+
+    <Tabs :model-value="filter.queue" @update:model-value="setQueue">
+      <TabsList class="w-full justify-start overflow-x-auto">
+        <TabsTrigger v-for="tab in queueTabs" :key="tab.value || 'all'" :value="tab.value">
+          {{ tab.label }}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+
+    <DataToolbar>
+      <div class="relative min-w-0 flex-1">
+        <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input v-model="filter.search" class="pl-9" placeholder="Search #100001, subject, company" @keydown.enter.prevent="applyFilters" />
       </div>
-      <Link :href="route('admin.tickets.create')">
-        <Button><Plus class="h-4 w-4" /> Create ticket</Button>
-      </Link>
-    </div>
-
-    <div class="mt-4 flex gap-2 overflow-x-auto rounded-lg border bg-card p-1">
-      <button
-        v-for="tab in queueTabs"
-        :key="tab.value || 'all'"
-        type="button"
-        class="inline-flex h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium transition-colors"
-        :class="filter.queue === tab.value ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'"
-        @click="setQueue(tab.value)"
+      <Button type="button" variant="secondary" @click="applyFilters">
+        <Search class="h-4 w-4" />
+        Search
+      </Button>
+      <FilterSheet
+        v-model:open="advancedOpen"
+        :count="activeAdvancedCount"
+        title="Ticket filters"
+        description="Filter by customer, taxonomy, priority, status, and tags."
+        @apply="applyFiltersAndClose"
+        @reset="resetFilters"
       >
-        {{ tab.label }}
-      </button>
-    </div>
-
-    <Card class="mt-4">
-      <CardContent class="space-y-4 p-4">
-        <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div class="flex min-w-0 flex-1 flex-col gap-3 md:flex-row">
-            <div class="relative min-w-0 flex-1">
-              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input v-model="filter.search" class="pl-9" placeholder="Search #100001, subject, company" @keydown.enter.prevent="applyFilters" />
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" @click="applyFilters">
-                <Filter class="h-4 w-4" />
-                Apply
-              </Button>
-              <Button type="button" variant="ghost" @click="advancedOpen = !advancedOpen">
-                <SlidersHorizontal class="h-4 w-4" />
-                Filters
-                <Badge v-if="activeAdvancedCount" tone="blue">{{ activeAdvancedCount }}</Badge>
-              </Button>
-              <Button v-if="hasActiveFilters" type="button" variant="ghost" @click="resetFilters">Reset</Button>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <Select v-model="selectedView" class="w-48" @change="applySavedView">
-              <option value="">Saved views</option>
-              <option v-for="view in savedViews" :key="view.id" :value="view.id">{{ view.name }}{{ view.is_shared ? ' shared' : '' }}</option>
-            </Select>
-            <Input v-model="viewForm.name" class="w-44" placeholder="New view name" />
-            <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_shared" /> Share</label>
-            <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_default" /> Default</label>
-            <Button size="sm" variant="secondary" :disabled="!viewForm.name" @click="createSavedView"><Save class="h-4 w-4" /> Save</Button>
-            <Button size="sm" variant="ghost" :disabled="!selectedSavedView" @click="updateSavedView"><RefreshCw class="h-4 w-4" /></Button>
-            <Button size="sm" variant="ghost" :disabled="!selectedSavedView || selectedSavedView.is_default" @click="setDefaultView"><Star class="h-4 w-4" /></Button>
-            <Button size="sm" variant="ghost" :disabled="!selectedSavedView" @click="deleteSavedView"><Trash2 class="h-4 w-4" /></Button>
-          </div>
-        </div>
-
-        <div v-if="advancedOpen" class="grid gap-3 border-t pt-4 md:grid-cols-2 xl:grid-cols-7">
-          <Select v-model="filter.status" @change="applyFilters">
+        <div class="grid gap-4">
+          <Select v-model="filter.status">
             <option value="">All statuses</option>
             <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
           </Select>
-          <Select v-model="filter.priority" @change="applyFilters">
+          <Select v-model="filter.priority">
             <option value="">All priorities</option>
             <option v-for="priority in priorities" :key="priority.value" :value="priority.value">{{ priority.label }}</option>
           </Select>
-          <Select v-model="filter.company" @change="applyFilters">
+          <Select v-model="filter.company">
             <option value="">All companies</option>
             <option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option>
           </Select>
-          <Select v-model="filter.project" @change="applyFilters">
+          <Select v-model="filter.project">
             <option value="">All projects</option>
             <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
           </Select>
-          <Select v-model="filter.tracker" @change="applyFilters">
+          <Select v-model="filter.tracker">
             <option value="">All trackers</option>
             <option v-for="tracker in trackers" :key="tracker.id" :value="tracker.id">{{ tracker.name }}</option>
           </Select>
-          <Select v-model="filter.category" @change="applyFilters">
+          <Select v-model="filter.category">
             <option value="">All categories</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
           </Select>
-          <Select v-model="filter.tag" @change="applyFilters">
+          <Select v-model="filter.tag">
             <option value="">All tags</option>
-            <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+            <option v-for="tagItem in tags" :key="tagItem.id" :value="tagItem.id">{{ tagItem.name }}</option>
           </Select>
         </div>
-      </CardContent>
-    </Card>
+      </FilterSheet>
+      <Button v-if="hasActiveFilters" type="button" variant="ghost" @click="resetFilters">Reset</Button>
 
-    <div v-if="selectedIds.length" class="sticky top-20 z-20 mt-4 rounded-lg border border-primary/30 bg-card/95 p-3 shadow-panel backdrop-blur">
+      <template #actions>
+        <Select v-model="selectedView" class="w-48" @change="applySavedView">
+          <option value="">Saved views</option>
+          <option v-for="view in savedViews" :key="view.id" :value="view.id">{{ view.name }}{{ view.is_shared ? ' shared' : '' }}</option>
+        </Select>
+        <details class="relative">
+          <summary class="list-none">
+            <Button type="button" variant="secondary">View actions</Button>
+          </summary>
+          <div class="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-xl">
+            <div class="px-2 py-1.5 text-xs font-semibold uppercase text-muted-foreground">Save current view</div>
+            <div class="space-y-3 px-2 py-2">
+              <Input v-model="viewForm.name" placeholder="New view name" />
+              <div class="flex flex-wrap gap-3">
+                <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_shared" /> Share</label>
+                <label class="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox v-model="viewForm.is_default" /> Default</label>
+              </div>
+              <Button size="sm" class="w-full" :disabled="!viewForm.name" @click="createSavedView"><Save class="h-4 w-4" /> Save view</Button>
+            </div>
+            <div class="-mx-1 my-1 h-px bg-border" />
+            <div class="rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-secondary">
+              <button type="button" class="flex w-full items-center gap-2" :disabled="!selectedSavedView" @click="updateSavedView">
+                <RefreshCw class="h-4 w-4" />
+                Update selected view
+              </button>
+            </div>
+            <div class="rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-secondary">
+              <button type="button" class="flex w-full items-center gap-2" :disabled="!selectedSavedView || selectedSavedView.is_default" @click="setDefaultView">
+                <Star class="h-4 w-4" />
+                Set as default
+              </button>
+            </div>
+            <div class="rounded-sm px-2 py-1.5 text-sm text-destructive transition-colors hover:bg-secondary">
+              <button type="button" class="flex w-full items-center gap-2" :disabled="!selectedSavedView" @click="deleteSavedView">
+                <Trash2 class="h-4 w-4" />
+                Delete view
+              </button>
+            </div>
+          </div>
+        </details>
+      </template>
+    </DataToolbar>
+
+    <div v-if="selectedIds.length" class="sticky top-20 z-20 rounded-lg border border-primary/30 bg-card/95 p-3 shadow-panel backdrop-blur">
       <div class="flex flex-wrap items-center gap-3">
         <Badge tone="blue"><CheckSquare class="mr-1 h-3.5 w-3.5" />{{ selectedIds.length }} selected</Badge>
         <Select v-model="bulkForm.status" class="w-44">
@@ -302,8 +341,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <Card class="mt-4 overflow-hidden">
-      <div class="flex items-center justify-between border-b bg-muted/30 px-4 py-3">
+    <ResponsiveList>
+      <div class="flex items-center justify-between bg-muted/30 px-4 py-3">
         <label class="flex items-center gap-2 text-sm font-medium">
           <Checkbox :model-value="allVisibleSelected" @update:model-value="toggleAllVisible" />
           Select visible
@@ -315,7 +354,7 @@ onMounted(() => {
         <div
           v-for="ticket in tickets.data"
           :key="ticket.id"
-          class="group grid gap-3 p-4 transition-colors hover:bg-secondary/40 lg:grid-cols-[32px_minmax(0,1.6fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto]"
+          class="group grid gap-3 p-4 transition-colors hover:bg-secondary/40 lg:grid-cols-[32px_minmax(0,1.5fr)_minmax(180px,0.68fr)_minmax(180px,0.72fr)_auto]"
         >
           <div class="pt-1">
             <Checkbox v-model="selectedIds" :value="ticket.id" />
@@ -324,9 +363,9 @@ onMounted(() => {
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
               <Link :href="ticket.url" class="text-xs font-semibold text-primary transition-colors hover:text-accent">{{ ticket.display_id }}</Link>
-              <Badge v-if="ticket.sla === 'breached'" tone="red">SLA breached</Badge>
-              <Badge :tone="statusTone(ticket.status)">{{ ticket.status }}</Badge>
-              <Badge :tone="priorityTone(ticket.priority)">{{ ticket.priority }}</Badge>
+              <SlaBadge :value="ticket.sla" />
+              <StatusBadge :status="ticket.status" />
+              <PriorityBadge :priority="ticket.priority" />
               <Badge v-for="tagItem in ticket.tags" :key="tagItem.name" tone="neutral">
                 <Tag class="mr-1 h-3 w-3" />
                 {{ tagItem.name }}
@@ -370,7 +409,7 @@ onMounted(() => {
       <div v-else class="p-6">
         <EmptyState title="No tickets found" />
       </div>
-    </Card>
+    </ResponsiveList>
 
     <div class="mt-4">
       <Pagination :links="tickets.links" />

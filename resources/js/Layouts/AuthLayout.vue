@@ -12,12 +12,15 @@ defineProps<{ title?: string }>()
 </script>
 
 <template>
-  <div class="min-h-screen overflow-hidden bg-muted/30 text-foreground dark:bg-background">
+  <div class="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-72 opacity-70 dark:opacity-25">
+      <div class="surface-grid h-full" />
+    </div>
     <div class="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_430px] lg:px-8">
       <section class="hidden max-w-xl lg:block">
         <div class="flex items-center justify-between">
           <Link href="/" class="inline-flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground shadow-sm">CS</span>
+            <span class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground shadow-sm">SD</span>
             <span>
               <span class="block text-sm font-semibold">Support Desk</span>
               <span class="block text-xs text-muted-foreground">B2B customer operations</span>
@@ -54,11 +57,11 @@ defineProps<{ title?: string }>()
         </div>
       </section>
 
-      <Card class="w-full">
+      <Card class="relative w-full">
         <CardHeader>
           <div class="mb-3 flex items-center justify-between lg:hidden">
             <Link href="/" class="inline-flex items-center gap-3">
-              <span class="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">CS</span>
+              <span class="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">SD</span>
               <span class="text-sm font-semibold">Support Desk</span>
             </Link>
             <ThemeToggle />

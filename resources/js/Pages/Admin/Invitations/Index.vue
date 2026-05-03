@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3'
+import { MailPlus, RotateCcw, XCircle } from 'lucide-vue-next'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
@@ -9,14 +10,11 @@ import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
 import CardHeader from '@/Components/ui/card/CardHeader.vue'
 import CardTitle from '@/Components/ui/card/CardTitle.vue'
-import Table from '@/Components/ui/table/Table.vue'
-import TableBody from '@/Components/ui/table/TableBody.vue'
-import TableCell from '@/Components/ui/table/TableCell.vue'
-import TableHead from '@/Components/ui/table/TableHead.vue'
-import TableHeader from '@/Components/ui/table/TableHeader.vue'
-import TableRow from '@/Components/ui/table/TableRow.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import ResponsiveList from '@/Components/shared/ResponsiveList.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 import type { Paginated } from '@/types'
 
 type Invitation = {
@@ -46,42 +44,53 @@ const form = useForm({
 const submit = () => form.post(route('admin.invitations.store'), { preserveScroll: true, onSuccess: () => form.reset('name', 'email') })
 const resend = (invitation: Invitation) => router.patch(route('admin.invitations.resend', invitation.id), {}, { preserveScroll: true })
 const revoke = (invitation: Invitation) => router.delete(route('admin.invitations.revoke', invitation.id), { preserveScroll: true })
+const invitationStatus = (invitation: Invitation) => invitation.accepted_at ? 'accepted' : invitation.revoked_at ? 'revoked' : 'pending'
 </script>
 
 <template>
   <AdminLayout title="Invitations">
-    <section class="grid gap-6 xl:grid-cols-[1fr_340px]">
-      <Card class="overflow-hidden">
-        <CardContent class="p-0">
-          <Table class="table-fixed">
-            <TableHeader class="bg-muted/50">
-              <TableRow>
-                <TableHead>Invitee</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead class="w-[160px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="invitation in invitations.data" :key="invitation.id">
-                <TableCell><p class="font-medium">{{ invitation.name }}</p><p class="text-xs text-muted-foreground">{{ invitation.email }}</p></TableCell>
-                <TableCell class="text-muted-foreground">{{ invitation.company }}</TableCell>
-                <TableCell class="text-muted-foreground">{{ invitation.role_name }}</TableCell>
-                <TableCell class="text-muted-foreground">{{ invitation.accepted_at ? 'Accepted' : invitation.revoked_at ? 'Revoked' : 'Pending' }}</TableCell>
-                <TableCell>
-                  <div v-if="!invitation.accepted_at" class="flex gap-2">
-                    <Button type="button" size="sm" variant="secondary" @click="resend(invitation)">Resend</Button>
-                    <Button type="button" size="sm" variant="destructive" @click="revoke(invitation)">Revoke</Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+    <PageHeader
+      title="Invitations"
+      description="Send, resend, and revoke customer access invitations with a clear audit-friendly list."
+      eyebrow="Customers"
+    />
+
+    <section class="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <ResponsiveList>
+        <div class="flex items-center justify-between bg-muted/30 px-4 py-3">
+          <p class="text-sm font-medium">Invitation queue</p>
+          <p class="text-sm text-muted-foreground">{{ invitations.data.length }} visible</p>
+        </div>
+        <div v-for="invitation in invitations.data" :key="invitation.id" class="grid gap-3 p-4 transition-colors hover:bg-secondary/40 lg:grid-cols-[minmax(0,1fr)_minmax(160px,0.45fr)_minmax(140px,0.35fr)_auto] lg:items-center">
+          <div class="min-w-0">
+            <p class="truncate font-medium">{{ invitation.name }}</p>
+            <p class="truncate text-sm text-muted-foreground">{{ invitation.email }}</p>
+          </div>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium">{{ invitation.company || 'Workspace' }}</p>
+            <p class="text-xs text-muted-foreground">{{ invitation.role_name }}</p>
+          </div>
+          <StatusBadge :status="invitationStatus(invitation)" />
+          <div class="flex justify-start gap-2 lg:justify-end">
+            <Button v-if="!invitation.accepted_at" type="button" size="sm" variant="secondary" @click="resend(invitation)">
+              <RotateCcw class="h-4 w-4" />
+              Resend
+            </Button>
+            <Button v-if="!invitation.accepted_at && !invitation.revoked_at" type="button" size="sm" variant="destructive" @click="revoke(invitation)">
+              <XCircle class="h-4 w-4" />
+              Revoke
+            </Button>
+          </div>
+        </div>
+      </ResponsiveList>
+
       <Card>
-        <CardHeader><CardTitle class="text-sm">Invite user</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-sm">
+            <MailPlus class="h-4 w-4 text-primary" />
+            Invite user
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <form class="space-y-3" @submit.prevent="submit">
             <div><Label>Company</Label><Select v-model="form.company_id" class="mt-1"><option v-for="company in companies" :key="company.public_id" :value="company.public_id">{{ company.name }}</option></Select></div>

@@ -16,6 +16,7 @@ import FieldError from '@/Components/shared/FieldError.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
 import { slugify } from '@/lib/slug'
 
 type Category = { id: string; parent_id?: string | null; parent?: string | null; name: string; slug: string; visibility: string; status: string; sort_order: number; articles_count: number }
@@ -123,18 +124,20 @@ const formatDate = (value?: string) => {
 
 <template>
   <AdminLayout title="Knowledge Base">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-normal">Knowledge base</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Manage public and internal help content with versioned rich text articles.</p>
-      </div>
-      <Button type="button" variant="secondary" @click="resetArticle">
-        <Plus class="h-4 w-4" />
-        New article
-      </Button>
-    </div>
+    <PageHeader
+      title="Knowledge base"
+      description="Manage public and internal help content with versioned rich text articles."
+      eyebrow="Configuration"
+    >
+      <template #actions>
+        <Button type="button" variant="secondary" @click="resetArticle">
+          <Plus class="h-4 w-4" />
+          New article
+        </Button>
+      </template>
+    </PageHeader>
 
-    <section class="mt-4 grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <section class="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
       <div class="space-y-4">
         <Card>
           <CardHeader>

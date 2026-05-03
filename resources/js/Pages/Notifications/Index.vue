@@ -5,12 +5,10 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Badge from '@/Components/ui/badge/Badge.vue'
-import Card from '@/Components/ui/card/Card.vue'
-import CardContent from '@/Components/ui/card/CardContent.vue'
-import CardHeader from '@/Components/ui/card/CardHeader.vue'
-import CardTitle from '@/Components/ui/card/CardTitle.vue'
 import EmptyState from '@/Components/shared/EmptyState.vue'
 import Pagination from '@/Components/shared/Pagination.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import ResponsiveList from '@/Components/shared/ResponsiveList.vue'
 import type { PageProps, Paginated } from '@/types'
 
 type NotificationRow = {
@@ -47,22 +45,24 @@ const timeFor = (value: string): string => new Intl.DateTimeFormat(undefined, {
 
 <template>
   <component :is="Layout" title="Notifications">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-normal">Notification center</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Ticket, mention, assignment, and CSAT updates in one place.</p>
-      </div>
-      <Button variant="secondary" @click="markAllRead">
-        <CheckCheck class="h-4 w-4" />
-        Mark all read
-      </Button>
-    </div>
+    <PageHeader
+      title="Notification center"
+      description="Ticket, mention, assignment, and CSAT updates in one place."
+      eyebrow="Inbox"
+    >
+      <template #actions>
+        <Button variant="secondary" @click="markAllRead">
+          <CheckCheck class="h-4 w-4" />
+          Mark all read
+        </Button>
+      </template>
+    </PageHeader>
 
-    <Card class="mt-4 overflow-hidden">
-      <CardHeader>
-        <CardTitle class="text-sm">Inbox</CardTitle>
-      </CardHeader>
-      <CardContent class="p-0">
+    <ResponsiveList>
+      <div class="flex items-center justify-between bg-muted/30 px-4 py-3">
+        <p class="text-sm font-medium">Inbox</p>
+        <p class="text-sm text-muted-foreground">{{ notifications.data.length }} visible</p>
+      </div>
         <div v-if="notifications.data.length" class="divide-y">
           <div v-for="item in notifications.data" :key="item.id" class="flex flex-wrap items-start justify-between gap-3 p-4 transition-colors hover:bg-secondary/50">
             <div class="flex min-w-0 flex-1 gap-3">
@@ -92,8 +92,7 @@ const timeFor = (value: string): string => new Intl.DateTimeFormat(undefined, {
         <div v-else class="p-4">
           <EmptyState title="No notifications" />
         </div>
-      </CardContent>
-    </Card>
+    </ResponsiveList>
 
     <div class="mt-4">
       <Pagination :links="notifications.links" />

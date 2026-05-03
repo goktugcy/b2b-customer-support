@@ -7,6 +7,7 @@ import Card from '@/Components/ui/card/Card.vue'
 import CardContent from '@/Components/ui/card/CardContent.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
 import RichContent from '@/Components/shared/RichContent.vue'
 
 const props = defineProps<{
@@ -29,12 +30,14 @@ const submitFeedback = (helpful: boolean) => {
       <ArrowLeft class="h-4 w-4" />
       Back to knowledge base
     </Link>
-    <Card class="mt-4">
-      <CardContent class="p-6">
+    <PageHeader class="mt-4" :title="article.title" :description="article.excerpt || undefined" eyebrow="Knowledge base">
+      <template #meta>
         <Badge v-if="article.category" tone="blue">{{ article.category }}</Badge>
-        <h2 class="mt-4 text-2xl font-semibold tracking-normal">{{ article.title }}</h2>
-        <p v-if="article.excerpt" class="mt-2 text-sm text-muted-foreground">{{ article.excerpt }}</p>
-        <RichContent class="mt-6" :html="article.body" />
+      </template>
+    </PageHeader>
+    <Card>
+      <CardContent class="p-6">
+        <RichContent :html="article.body" />
         <div class="mt-8 rounded-md border bg-muted/30 p-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>

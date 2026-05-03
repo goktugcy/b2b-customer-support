@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 210 33% 98%;
+    --background: 210 30% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 212 81% 38%;
+    --primary: 215 72% 40%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 28% 94%;
+    --secondary: 215 26% 94%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 26% 95%;
+    --muted: 215 25% 95%;
     --muted-foreground: 215 16% 43%;
-    --accent: 174 72% 32%;
+    --accent: 183 75% 32%;
     --accent-foreground: 180 35% 96%;
     --destructive: 0 72% 45%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214 24% 88%;
-    --input: 214 24% 88%;
-    --ring: 212 81% 38%;
+    --border: 214 22% 87%;
+    --input: 214 22% 87%;
+    --ring: 215 72% 40%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222 45% 7%;
-    --foreground: 210 40% 96%;
-    --card: 222 38% 10%;
+    --background: 222 42% 8%;
+    --foreground: 210 38% 96%;
+    --card: 222 36% 11%;
     --card-foreground: 210 40% 96%;
-    --popover: 222 38% 10%;
+    --popover: 222 36% 11%;
     --popover-foreground: 210 40% 96%;
-    --primary: 203 92% 62%;
+    --primary: 208 88% 62%;
     --primary-foreground: 222 47% 8%;
-    --secondary: 217 24% 17%;
+    --secondary: 219 25% 17%;
     --secondary-foreground: 210 40% 96%;
-    --muted: 217 24% 15%;
+    --muted: 219 24% 15%;
     --muted-foreground: 215 20% 68%;
     --accent: 173 80% 40%;
     --accent-foreground: 222 47% 8%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 23% 19%;
-    --input: 217 23% 21%;
-    --ring: 203 92% 62%;
+    --border: 218 22% 20%;
+    --input: 218 22% 22%;
+    --ring: 208 88% 62%;
   }
 
   * {
@@ -69,6 +69,14 @@
 @layer components {
   .link {
     @apply font-medium text-primary underline-offset-4 transition-colors hover:text-accent hover:underline;
+  }
+
+  .surface-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.55) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.55) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: linear-gradient(to bottom, black, transparent 72%);
   }
 
   .rich-content p,

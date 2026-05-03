@@ -21,6 +21,7 @@ import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue'
 import DialogHeader from '@/Components/ui/dialog/DialogHeader.vue'
 import DialogTitle from '@/Components/ui/dialog/DialogTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
 import type { CategoryOption, CustomFieldDefinition, ProjectOption, TagOption, TrackerOption } from '@/types'
 
 type CompanyOption = { id: string; name: string }
@@ -259,14 +260,13 @@ const deleteCustomField = (field: CustomFieldDefinition) => openConfirm(
 
 <template>
   <AdminLayout title="Issue Tracking">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-xl font-semibold tracking-normal">Issue tracking</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Manage taxonomy, trackers, tags, and custom fields for support tickets.</p>
-      </div>
-    </div>
+    <PageHeader
+      title="Issue tracking"
+      description="Manage taxonomy, trackers, tags, and custom fields for support tickets."
+      eyebrow="Configuration"
+    />
 
-    <div class="mt-4 grid gap-6 xl:grid-cols-2">
+    <div class="grid gap-6 xl:grid-cols-2">
       <Card>
         <CardHeader>
           <div class="flex items-center justify-between gap-3">

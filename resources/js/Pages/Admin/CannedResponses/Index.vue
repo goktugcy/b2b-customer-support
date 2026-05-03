@@ -12,12 +12,9 @@ import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
 import Select from '@/Components/ui/select/Select.vue'
 import Textarea from '@/Components/ui/textarea/Textarea.vue'
-import Table from '@/Components/ui/table/Table.vue'
-import TableBody from '@/Components/ui/table/TableBody.vue'
-import TableCell from '@/Components/ui/table/TableCell.vue'
-import TableHead from '@/Components/ui/table/TableHead.vue'
-import TableHeader from '@/Components/ui/table/TableHeader.vue'
-import TableRow from '@/Components/ui/table/TableRow.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
+import ResponsiveList from '@/Components/shared/ResponsiveList.vue'
+import StatusBadge from '@/Components/shared/StatusBadge.vue'
 
 type ResponseRow = { id: string; title: string; shortcut?: string | null; body: string; scope: string; status: string; owner?: string | null }
 
@@ -34,12 +31,13 @@ const remove = (id: string) => router.delete(route('admin.canned-responses.destr
 
 <template>
   <AdminLayout title="Canned Responses">
-    <div>
-      <h2 class="text-xl font-semibold tracking-normal">Canned responses</h2>
-      <p class="mt-1 text-sm text-muted-foreground">Reusable replies with ticket variables.</p>
-    </div>
+    <PageHeader
+      title="Canned responses"
+      description="Reusable replies with ticket, requester, and company variables."
+      eyebrow="Configuration"
+    />
 
-    <section class="mt-4 grid gap-4 xl:grid-cols-[380px_1fr]">
+    <section class="grid gap-4 xl:grid-cols-[380px_1fr]">
       <Card>
         <CardHeader><CardTitle class="text-sm">New response</CardTitle></CardHeader>
         <CardContent>
@@ -56,24 +54,23 @@ const remove = (id: string) => router.delete(route('admin.canned-responses.destr
         </CardContent>
       </Card>
 
-      <Card class="overflow-hidden">
-        <CardContent class="p-0">
-          <Table>
-            <TableHeader><TableRow><TableHead>Response</TableHead><TableHead>Scope</TableHead><TableHead>Status</TableHead><TableHead class="w-16"></TableHead></TableRow></TableHeader>
-            <TableBody>
-              <TableRow v-for="response in responses" :key="response.id">
-                <TableCell>
-                  <p class="font-medium">{{ response.title }}</p>
-                  <p class="text-xs text-muted-foreground">{{ response.shortcut || 'No shortcut' }}</p>
-                </TableCell>
-                <TableCell><Badge>{{ response.scope }}</Badge></TableCell>
-                <TableCell><Badge :tone="response.status === 'published' ? 'green' : 'neutral'">{{ response.status }}</Badge></TableCell>
-                <TableCell><Button size="icon" variant="ghost" @click="remove(response.id)"><Trash2 class="h-4 w-4" /></Button></TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <ResponsiveList>
+        <div class="flex items-center justify-between bg-muted/30 px-4 py-3">
+          <p class="text-sm font-medium">Response library</p>
+          <p class="text-sm text-muted-foreground">{{ responses.length }} records</p>
+        </div>
+        <div v-for="response in responses" :key="response.id" class="grid gap-3 p-4 transition-colors hover:bg-secondary/40 lg:grid-cols-[minmax(0,1fr)_120px_130px_auto] lg:items-center">
+          <div class="min-w-0">
+            <p class="truncate font-medium">{{ response.title }}</p>
+            <p class="truncate text-xs text-muted-foreground">{{ response.shortcut || 'No shortcut' }}</p>
+          </div>
+          <Badge>{{ response.scope }}</Badge>
+          <StatusBadge :status="response.status" />
+          <div class="flex justify-start lg:justify-end">
+            <Button size="icon" variant="ghost" @click="remove(response.id)"><Trash2 class="h-4 w-4" /></Button>
+          </div>
+        </div>
+      </ResponsiveList>
     </section>
   </AdminLayout>
 </template>

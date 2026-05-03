@@ -15,6 +15,7 @@ import FieldError from '@/Components/shared/FieldError.vue'
 import FilePicker from '@/Components/shared/FilePicker.vue'
 import CollapsibleMetaBox from '@/Components/shared/CollapsibleMetaBox.vue'
 import MultiSelectCombobox from '@/Components/shared/MultiSelectCombobox.vue'
+import PageHeader from '@/Components/shared/PageHeader.vue'
 import RichTextEditor from '@/Components/shared/RichTextEditor.vue'
 import TagPicker from '@/Components/shared/TagPicker.vue'
 import CustomFieldForm from '@/Components/shared/CustomFieldForm.vue'
@@ -91,12 +92,14 @@ const submit = () => form.post(route('admin.tickets.store'), {
 
 <template>
   <AdminLayout title="Create ticket">
-    <div class="mb-4">
-      <Link :href="route('admin.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
-        <ArrowLeft class="h-4 w-4" />
-        Back to tickets
-      </Link>
-    </div>
+    <PageHeader title="Create ticket" description="Open a new customer request with routing, taxonomy, attachments, and structured fields." eyebrow="Operations">
+      <template #actions>
+        <Link :href="route('admin.tickets.index')" class="link inline-flex items-center gap-2 text-sm">
+          <ArrowLeft class="h-4 w-4" />
+          Back to tickets
+        </Link>
+      </template>
+    </PageHeader>
 
     <form class="grid gap-6 xl:grid-cols-[1fr_360px]" @submit.prevent="submit">
       <div class="space-y-6">

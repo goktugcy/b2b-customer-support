@@ -4,7 +4,12 @@ import { useForm } from '@inertiajs/vue3'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
 import Label from '@/Components/ui/label/Label.vue'
-import Modal from '@/Components/Modal.vue'
+import Dialog from '@/Components/ui/dialog/Dialog.vue'
+import DialogContent from '@/Components/ui/dialog/DialogContent.vue'
+import DialogDescription from '@/Components/ui/dialog/DialogDescription.vue'
+import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue'
+import DialogHeader from '@/Components/ui/dialog/DialogHeader.vue'
+import DialogTitle from '@/Components/ui/dialog/DialogTitle.vue'
 import FieldError from '@/Components/shared/FieldError.vue'
 
 type InputExpose = {
@@ -49,25 +54,24 @@ const deleteUser = () => {
 
     <Button type="button" variant="danger" @click="confirmUserDeletion">Delete account</Button>
 
-    <Modal :show="confirmingUserDeletion" max-width="lg" @close="closeModal">
-      <div class="p-6">
-        <h2 class="text-lg font-semibold">Delete account</h2>
+    <Dialog v-model:open="confirmingUserDeletion">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete account</DialogTitle>
+          <DialogDescription>Enter your password to confirm that you want to permanently delete your account.</DialogDescription>
+        </DialogHeader>
 
-        <p class="mt-2 text-sm leading-6 text-muted-foreground">
-          Enter your password to confirm that you want to permanently delete your account.
-        </p>
-
-        <div class="mt-6">
+        <div>
           <Label for="password" class="sr-only">Password</Label>
           <Input id="password" ref="passwordInput" v-model="form.password" class="mt-1" type="password" placeholder="Password" @keyup.enter="deleteUser" />
           <FieldError :message="form.errors.password" />
         </div>
 
-        <div class="mt-6 flex justify-end gap-3">
+        <DialogFooter>
           <Button type="button" variant="secondary" @click="closeModal">Cancel</Button>
           <Button type="button" variant="danger" :disabled="form.processing" @click="deleteUser">Delete account</Button>
-        </div>
-      </div>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
