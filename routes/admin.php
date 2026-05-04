@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AutomationRuleController;
 use App\Http\Controllers\Admin\CannedResponseController;
+use App\Http\Controllers\Admin\CommandCenterController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\CsatController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -25,6 +26,7 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
     ->group(function (): void {
         Route::get('/', fn () => redirect()->route('admin.home'))->name('dashboard');
         Route::get('search', SearchController::class)->name('search');
+        Route::get('command-center', CommandCenterController::class)->name('command-center.index');
 
         Route::patch('tickets/bulk', TicketBulkController::class)->name('tickets.bulk');
         Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store']);
@@ -83,6 +85,7 @@ Route::middleware(['auth', 'verified', 'active.user', 'provider.user', 'tenant']
         Route::delete('issue-tracking/custom-fields/{customField}', [IssueTrackingController::class, 'destroyCustomField'])->name('issue-tracking.custom-fields.destroy');
         Route::resource('companies', CompanyController::class)->only(['index', 'store', 'show']);
         Route::patch('companies/{company}/branding', [CompanyController::class, 'updateBranding'])->name('companies.branding.update');
+        Route::patch('companies/{company}/api-docs-access', [CompanyController::class, 'updateApiDocsAccess'])->name('companies.api-docs-access.update');
         Route::patch('companies/{company}/sla-policies/{policy}', [CompanyController::class, 'updateSlaPolicy'])->name('companies.sla-policies.update');
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');

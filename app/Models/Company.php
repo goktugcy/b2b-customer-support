@@ -79,6 +79,11 @@ class Company extends Model
         return $this->type === CompanyType::Client;
     }
 
+    public function hasApiDocsAccess(): bool
+    {
+        return (bool) data_get($this->settings ?? [], 'api_docs.enabled', false);
+    }
+
     public function scopeClients(Builder $query): Builder
     {
         return $query->where('type', CompanyType::Client->value);

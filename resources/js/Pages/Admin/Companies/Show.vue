@@ -24,6 +24,7 @@ type Company = {
   status: string
   timezone: string
   settings: { branding?: { display_name?: string | null; logo_url?: string | null; brand_color?: string | null } }
+  api_docs_enabled: boolean
   users: { id: string; name: string; email: string; status: string; roles: string[] }[]
   api_clients: { id: string; name: string; status: string; last_used_at?: string }[]
   webhooks: { id: string; url: string; status: string; events: string[] }[]
@@ -48,6 +49,9 @@ const saveSla = (company: Company, policy: Company['sla_policies'][number]) => {
 }
 const saveBranding = (company: Company) => {
   brandingForm.patch(route('admin.companies.branding.update', company.id), { preserveScroll: true })
+}
+const setApiDocsAccess = (company: Company, enabled: boolean) => {
+  router.patch(route('admin.companies.api-docs-access.update', company.id), { enabled }, { preserveScroll: true })
 }
 </script>
 
@@ -168,6 +172,41 @@ const saveBranding = (company: Company) => {
 
     <PageSection title="Integrations" description="Company API clients and webhook endpoints.">
       <div class="grid gap-4 lg:grid-cols-2">
+        <Card v-if="company.type === 'client'" class="lg:col-span-2">
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2 text-sm">
+              <KeyRound class="h-4 w-4 text-primary" />
+              API documentation access
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex flex-col gap-4 rounded-md border bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="font-medium">Swagger UI</p>
+                  <Badge :tone="company.api_docs_enabled ? 'green' : 'neutral'">
+                    {{ company.api_docs_enabled ? 'Enabled for this company' : 'Disabled for this company' }}
+                  </Badge>
+                </div>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Customer users can open the API docs only when access is enabled for their company.
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <a v-if="company.api_docs_enabled" :href="route('api-docs.index')">
+                  <Button type="button" variant="secondary">Open docs</Button>
+                </a>
+                <Button
+                  type="button"
+                  :variant="company.api_docs_enabled ? 'destructive' : 'secondary'"
+                  @click="setApiDocsAccess(company, !company.api_docs_enabled)"
+                >
+                  {{ company.api_docs_enabled ? 'Disable access' : 'Enable access' }}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader><CardTitle class="flex items-center gap-2 text-sm"><KeyRound class="h-4 w-4 text-primary" />API clients</CardTitle></CardHeader>
           <CardContent class="space-y-2">

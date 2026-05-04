@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3'
+import { FileText } from 'lucide-vue-next'
 import PortalLayout from '@/Layouts/PortalLayout.vue'
 import Button from '@/Components/ui/button/Button.vue'
 import Input from '@/Components/ui/input/Input.vue'
@@ -15,7 +16,7 @@ import StatusBadge from '@/Components/shared/StatusBadge.vue'
 
 type Client = { id: string; name: string; status: string; last_used_at?: string; expires_at?: string; token_count: number }
 
-defineProps<{ clients: Client[]; abilities: string[] }>()
+defineProps<{ clients: Client[]; abilities: string[]; canAccessApiDocs: boolean }>()
 
 const form = useForm({ name: '', abilities: ['tickets:create', 'tickets:read', 'tickets:comment', 'attachments:create'] as string[], expires_at: '' })
 const submit = () => form.post(route('portal.api-tokens.store'), { preserveScroll: true, onSuccess: () => form.reset('name', 'expires_at') })
@@ -27,7 +28,16 @@ const submit = () => form.post(route('portal.api-tokens.store'), { preserveScrol
       title="API tokens"
       description="Create scoped API clients for ticket, attachment, knowledge base, report, and CSAT access."
       eyebrow="Integrations"
-    />
+    >
+      <template v-if="canAccessApiDocs" #actions>
+        <a :href="route('api-docs.index')">
+          <Button type="button" variant="secondary">
+            <FileText class="mr-2 h-4 w-4" />
+            API Docs
+          </Button>
+        </a>
+      </template>
+    </PageHeader>
 
     <section class="grid gap-6 lg:grid-cols-[1fr_340px]">
       <ResponsiveList>
@@ -53,6 +63,7 @@ const submit = () => form.post(route('portal.api-tokens.store'), { preserveScrol
         <CardContent>
           <div class="mb-4 rounded-md border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
             Tokens should use the smallest ability set needed by the integration. The secret is only shown after creation.
+            <a v-if="canAccessApiDocs" :href="route('api-docs.index')" class="mt-2 inline-flex font-medium text-primary">Open the interactive API documentation.</a>
           </div>
           <form class="space-y-3" @submit.prevent="submit">
             <div><Label>Name</Label><Input v-model="form.name" class="mt-1" required /></div>

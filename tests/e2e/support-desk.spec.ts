@@ -14,6 +14,13 @@ test('admin core screens render and slug previews are generated', async ({ page 
   await page.goto('/admin/dashboard')
   await expect(page.getByText('Status distribution')).toBeVisible()
 
+  await page.goto('/admin/command-center')
+  await expect(page.locator('h2', { hasText: 'Command Center' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'API Docs' }).first()).toBeVisible()
+
+  await page.goto('/api-docs')
+  await expect(page.getByRole('heading', { name: 'Interactive API documentation' })).toBeVisible()
+
   await page.goto('/admin/tickets')
   await expect(page.getByRole('heading', { name: 'Ticket operations' })).toBeVisible()
   await page.getByPlaceholder('Search #100001, subject, company').fill('support')
@@ -49,4 +56,8 @@ test('reports queue controls and portal screens render', async ({ page }) => {
   await expect(page.locator('h2', { hasText: 'Company tickets' })).toBeVisible()
   await page.goto('/portal/knowledge-base')
   await expect(page.locator('h2', { hasText: 'Knowledge base' })).toBeVisible()
+  await page.goto('/portal/api-tokens')
+  await expect(page.getByRole('link', { name: 'API Docs' }).first()).toBeVisible()
+  await page.goto('/api-docs')
+  await expect(page.getByRole('heading', { name: 'Interactive API documentation' })).toBeVisible()
 })

@@ -19,8 +19,12 @@ class E2eSeeder extends Seeder
             'name' => 'Acme Corp',
             'status' => 'active',
             'timezone' => 'UTC',
-            'settings' => [],
+            'settings' => ['api_docs' => ['enabled' => true]],
         ]);
+
+        $company->forceFill([
+            'settings' => array_replace_recursive($company->settings ?? [], ['api_docs' => ['enabled' => true]]),
+        ])->save();
 
         $user = User::updateOrCreate([
             'email' => 'customer@example.com',

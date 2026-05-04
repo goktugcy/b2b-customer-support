@@ -43,6 +43,7 @@ class ApiTokenController extends Controller
                     'token_count' => $client->tokens->count(),
                 ]),
             'abilities' => self::DEFAULT_ABILITIES,
+            'canAccessApiDocs' => $request->user()->company?->hasApiDocsAccess() ?? false,
         ]);
     }
 

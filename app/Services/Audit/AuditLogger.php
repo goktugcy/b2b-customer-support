@@ -4,6 +4,7 @@ namespace App\Services\Audit;
 
 use App\Models\ApiClient;
 use App\Models\AuditLog;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -19,7 +20,9 @@ class AuditLogger
         ?array $metadata = null,
         ?Request $request = null,
     ): AuditLog {
-        $companyId = $auditable?->getAttribute('company_id') ?? $actor?->getAttribute('company_id');
+        $companyId = $auditable instanceof Company
+            ? $auditable->id
+            : ($auditable?->getAttribute('company_id') ?? $actor?->getAttribute('company_id'));
 
         return AuditLog::create([
             'company_id' => $companyId,

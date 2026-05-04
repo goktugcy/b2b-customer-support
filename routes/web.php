@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CsatController;
+use App\Http\Controllers\ApiDocsController;
 use App\Http\Controllers\InboundEmailController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -37,6 +38,14 @@ Route::middleware(['auth', 'active.user', 'tenant'])->group(function () {
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 });
+
+Route::middleware(['auth', 'verified', 'active.user', 'tenant'])
+    ->prefix('api-docs')
+    ->name('api-docs.')
+    ->group(function (): void {
+        Route::get('/', [ApiDocsController::class, 'index'])->name('index');
+        Route::get('/openapi.yaml', [ApiDocsController::class, 'openapi'])->name('openapi');
+    });
 
 Route::get('/csat/{token}', [CsatController::class, 'show'])->name('csat.show');
 Route::post('/csat/{token}', [CsatController::class, 'submit'])->name('csat.submit');

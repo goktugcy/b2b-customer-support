@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\StoreCompanyRequest;
 use App\Models\Company;
 use App\Models\CompanySlaPolicy;
 use App\Services\Sla\SlaService;
+use App\Services\Audit\AuditLogger;
 use App\Services\Tickets\IssueTrackingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -73,6 +74,7 @@ class CompanyController extends Controller
                 'status' => $company->status->value,
                 'timezone' => $company->timezone,
                 'settings' => $company->settings ?? [],
+                'api_docs_enabled' => $company->hasApiDocsAccess(),
                 'users' => $company->users->map(fn ($user): array => [
                     'id' => $user->public_id,
                     'name' => $user->name,
@@ -145,5 +147,34 @@ class CompanyController extends Controller
         ]);
 
         return back()->with('success', 'Company branding updated.');
+    }
+
+    public function updateApiDocsAccess(Request $request, Company $company, AuditLogger $audit): RedirectResponse
+    {
+        $this->authorize('manage', Company::class);
+
+        $validated = $request->validate([
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $before = ['api_docs' => ['enabled' => $company->hasApiDocsAccess()]];
+        $settings = $company->settings ?? [];
+        data_set($settings, 'api_docs.enabled', (bool) $validated['enabled']);
+
+        $company->update(['settings' => $settings]);
+
+        $after = ['api_docs' => ['enabled' => $company->hasApiDocsAccess()]];
+
+        $audit->log(
+            'company.api_docs_access_updated',
+            $company,
+            $request->user(),
+            $before,
+            $after,
+            null,
+            $request,
+        );
+
+        return back()->with('success', 'API docs access updated.');
     }
 }

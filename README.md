@@ -113,6 +113,7 @@ Keep `VITE_REVERB_ENABLED=false` unless `php artisan reverb:start` is running; o
 API clients are managed from the customer portal. Use bearer tokens against `/api/v1`.
 
 The OpenAPI description is available at [docs/openapi.yaml](docs/openapi.yaml).
+Interactive Swagger UI is available at `/api-docs` for provider admins and for client companies with API docs access enabled.
 
 Ticket creation supports an optional `Idempotency-Key` header. Reusing a key with the same body returns the stored response; reusing it with a different body returns a validation error.
 
