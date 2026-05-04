@@ -39,6 +39,15 @@ const filter = useForm({
 const selected = ref<LogRow | null>(null)
 const params = computed(() => filter.data())
 const applyFilters = () => router.get(route('admin.audit-logs.index'), filter.data(), { preserveState: true, replace: true })
+const formatDate = (value?: string) => {
+  if (!value) return 'Not recorded'
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+}
 </script>
 
 <template>
@@ -73,7 +82,9 @@ const applyFilters = () => router.get(route('admin.audit-logs.index'), filter.da
         <p class="truncate font-medium">{{ log.action }}</p>
         <p class="truncate text-sm text-muted-foreground">{{ log.company || 'System' }}</p>
         <p class="truncate text-sm text-muted-foreground">{{ log.actor || 'System' }}</p>
-        <p class="text-sm text-muted-foreground">{{ log.created_at }}</p>
+        <p class="text-sm text-muted-foreground">
+          <time :datetime="log.created_at">{{ formatDate(log.created_at) }}</time>
+        </p>
       </button>
     </ResponsiveList>
     <div class="mt-4"><Pagination :links="logs.links" /></div>
@@ -89,7 +100,11 @@ const applyFilters = () => router.get(route('admin.audit-logs.index'), filter.da
         </div>
         <div class="mt-4 grid gap-4 md:grid-cols-2">
           <div><p class="mb-2 text-xs font-medium text-muted-foreground">Metadata</p><pre class="max-h-60 overflow-auto rounded-md bg-muted p-3 text-xs">{{ JSON.stringify(selected?.metadata, null, 2) }}</pre></div>
-          <div class="text-sm text-muted-foreground"><p>IP: {{ selected?.ip_address || '-' }}</p><p class="mt-2 break-all">User agent: {{ selected?.user_agent || '-' }}</p></div>
+          <div class="text-sm text-muted-foreground">
+            <p>Time: <time :datetime="selected?.created_at">{{ formatDate(selected?.created_at) }}</time></p>
+            <p class="mt-2">IP: {{ selected?.ip_address || '-' }}</p>
+            <p class="mt-2 break-all">User agent: {{ selected?.user_agent || '-' }}</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

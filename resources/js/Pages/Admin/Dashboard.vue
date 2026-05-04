@@ -54,6 +54,16 @@ const metricIcon = (key: string) => {
 
   return Activity
 }
+
+const formatDate = (value?: string) => {
+  if (!value) return 'Not recorded'
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+}
 </script>
 
 <template>
@@ -138,7 +148,10 @@ const metricIcon = (key: string) => {
                   </Link>
                   <span v-else>{{ event.ticket_id || 'Ticket' }} · {{ event.ticket || 'Ticket' }}</span>
                 </p>
-                <p class="mt-1 text-muted-foreground">{{ event.company || 'Company' }} · {{ event.actor }} · {{ event.occurred_at }}</p>
+                <p class="mt-1 text-muted-foreground">
+                  {{ event.company || 'Company' }} · {{ event.actor }} ·
+                  <time :datetime="event.occurred_at">{{ formatDate(event.occurred_at) }}</time>
+                </p>
               </div>
             </div>
           </div>
