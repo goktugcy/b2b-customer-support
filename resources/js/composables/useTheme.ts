@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 
@@ -38,6 +38,10 @@ const applyTheme = (preference: ThemePreference) => {
 
 const onSystemThemeChange = (event: MediaQueryListEvent) => {
   systemPrefersDark.value = event.matches
+
+  if (theme.value === 'system') {
+    applyTheme(theme.value)
+  }
 }
 
 export const applyInitialTheme = () => {
@@ -59,13 +63,7 @@ export const useTheme = () => {
     mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     systemPrefersDark.value = mediaQuery.matches
     mediaQuery.addEventListener('change', onSystemThemeChange)
-
-    watch(theme, (value) => {
-      window.localStorage.setItem(storageKey, value)
-      applyTheme(value)
-    }, { immediate: true })
-
-    watch(systemPrefersDark, () => applyTheme(theme.value))
+    applyTheme(theme.value)
 
     initialized = true
   }
@@ -75,6 +73,12 @@ export const useTheme = () => {
 
   const setTheme = (preference: ThemePreference) => {
     theme.value = preference
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, preference)
+    }
+
+    applyTheme(preference)
   }
 
   const toggleTheme = () => {
