@@ -1,17 +1,18 @@
 # Support Desk
 
-Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, Sanctum, PostgreSQL, Redis queues, and Mailpit.
+Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, Sanctum, PostgreSQL, Redis queues, Reverb, and a shadcn/Tailwind-inspired admin and portal UI.
 
 ## Implemented Production Core
 
 - Provider admin console and customer portal
+- Provider Command Center for platform health, customer workspaces, configuration coverage, and quick admin actions
 - Tenant-scoped companies, users, roles, invitations, tickets, comments, attachments, API tokens, webhooks, and audit logs
 - Company-based 24/7 SLA policies with first-response and resolution breach tracking
 - Real dashboard metrics for provider operations and customer portal workspaces
 - Attachment allowlist validation with file type and size limits
 - Invitation revoke/resend and user role/status management
 - Webhook delivery visibility, test delivery, manual retry, and secret rotation
-- API v1 ticket endpoints with idempotent ticket creation and OpenAPI documentation
+- API v1 ticket endpoints with idempotent ticket creation, OpenAPI documentation, and company-gated Swagger UI
 - Company-scoped human ticket numbers such as `#100001`, with numeric portal/admin ticket URLs and legacy public-id redirects
 - Database + mail notification center with header inbox dropdown, read/unread filters, and a full notifications archive
 - Personal and shared saved ticket views for admin and portal ticket lists
@@ -33,6 +34,18 @@ Tenant-aware B2B customer support platform built with Laravel, Inertia, Vue, San
 - Attachment security through MIME, extension, and size allowlists
 - Portal branding settings and user notification delivery preferences
 
+## Screenshots
+
+![Admin dashboard](docs/screenshots/admin-dashboard.png)
+
+![Ticket operations](docs/screenshots/admin-tickets.png)
+
+![Companies](docs/screenshots/admin-companies.png)
+
+![Command Center](docs/screenshots/admin-command-center.png)
+
+![Ticket detail](docs/screenshots/admin-ticket-detail.png)
+
 ## Setup
 
 ```bash
@@ -43,6 +56,8 @@ php artisan key:generate
 php artisan migrate --seed
 npm run build
 ```
+
+The default example environment expects PostgreSQL, Redis, and the PHP Redis extension. For a lightweight local-only run without Redis, set `CACHE_STORE=array` and `QUEUE_CONNECTION=sync` in `.env`.
 
 Create or update a provider admin:
 
@@ -55,6 +70,8 @@ Run the local app, queue workers, Reverb, logs, and Vite:
 ```bash
 composer run dev
 ```
+
+If you change `BROADCAST_CONNECTION`, `REVERB_*`, or any `VITE_*` value, restart `composer run dev` so Laravel and Vite both read the new environment.
 
 ## Operations
 
@@ -114,6 +131,8 @@ API clients are managed from the customer portal. Use bearer tokens against `/ap
 
 The OpenAPI description is available at [docs/openapi.yaml](docs/openapi.yaml).
 Interactive Swagger UI is available at `/api-docs` for provider admins and for client companies with API docs access enabled.
+
+Provider admins can enable or disable client-company API docs access from company detail pages and the Command Center.
 
 Ticket creation supports an optional `Idempotency-Key` header. Reusing a key with the same body returns the stored response; reusing it with a different body returns a validation error.
 
